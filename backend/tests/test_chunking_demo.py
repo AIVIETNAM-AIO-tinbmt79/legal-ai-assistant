@@ -1,14 +1,19 @@
-from pathlib import Path 
-from parser.pdf_parser import PDFParser
-from parser.parser_factory import ParserFactory
 from chunking.chunker_factory import ChunkerFactory
-from parser.cleaner import TextCleaner
 
-path_file = Path(r"D:\legal-ai-assistant\backend\data\sample_contracts\docx_test.docx")
-parser = ParserFactory.get_parser(path_file)
-text = parser.parse(path_file)
 
-text = TextCleaner.clean(text)
+text = """
+Bên A có trách nhiệm cung cấp dịch vụ theo đúng thời hạn đã thỏa thuận.
+
+Bên B có trách nhiệm cung cấp đầy đủ thông tin và thanh toán đúng hạn.
+
+Trong trường hợp một bên vi phạm nghĩa vụ, bên còn lại có quyền yêu cầu bồi thường thiệt hại.
+"""
+
+
+# ==============================
+# Create chunker
+# ==============================
+
 chunker = ChunkerFactory.create(text)
 
 print("=" * 70)
