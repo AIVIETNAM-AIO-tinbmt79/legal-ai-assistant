@@ -1,37 +1,91 @@
+from typing import Optional
+
 from sentence_transformers import CrossEncoder
 
 from retrieval.retrieval_result import RetrievalResult
+
 from reranking.base_reranker import BaseReranker
 
 
 class CrossEncoderReranker(BaseReranker):
     """
-    Cross-Encoder reranker.
+    Cross-Encoder based reranker.
 
-    Long legal chunks are temporarily split into smaller
-    segments for reranking.
+    Flow:
 
-    The original legal Chunk is preserved.
+        Query
+          +
+        Hybrid candidates
+              ↓
+        Cross Encoder
+              ↓
+        Relevance scores
+              ↓
+        Sort
+              ↓
+        Top K
     """
 
     def __init__(
         self,
-        model_name: str,
+        model_name: str = (
+            "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        ),
         max_length: int = 1024,
         segment_tokens: int = 450,
         segment_overlap: int = 50,
+        device: Optional[str] = None,
     ):
+
         self.model_name = model_name
+
         self.max_length = max_length
 
-        # Number of tokens used for each temporary segment.
         self.segment_tokens = segment_tokens
+
         self.segment_overlap = segment_overlap
+
+        # ==================================================
+        # Validate
+        # ==================================================
+
+        if segment_tokens <= 0:
+            raise ValueError(
+                "segment_tokens must be > 0"
+            )
+
+        if segment_overlap < 0:
+            raise ValueError(
+                "segment_overlap must be >= 0"
+            )
+
+        if segment_overlap >= segment_tokens:
+            raise ValueError(
+                "segment_overlap must be "
+                "smaller than segment_tokens"
+            )
+
+        # ==================================================
+        # Load Cross Encoder
+        # ==================================================
+
+        model_kwargs = {
+            "max_length": max_length,
+        }
+
+        if device is not None:
+            model_kwargs["device"] = device
 
         self.model = CrossEncoder(
             model_name,
-            max_length=max_length,
+            **model_kwargs,
         )
+
+        # ==================================================
+        # Tokenizer
+        # ==================================================
+
+        self.tokenizer = self.model.tokenizer
 
     # ==================================================
     # Rerank
@@ -50,124 +104,121 @@ class CrossEncoderReranker(BaseReranker):
         if not results:
             return []
 
+        if top_k <= 0:
+            return []
+
         reranked_results = []
 
         for result in results:
 
-            chunk_text = result.chunk.text
-
-            # ------------------------------------------
-            # Short chunk
-            # ------------------------------------------
-
-            if self._count_tokens(chunk_text) <= self.segment_tokens:
-
-                score = self._score(
-                    query,
-                    chunk_text,
-                )
-
-            # ------------------------------------------
-            # Long chunk
-            # ------------------------------------------
-
-            else:
-
-                segments = self._split_text(
-                    chunk_text
-                )
-
-                segment_scores = []
-
-                for segment in segments:
-
-                    score = self._score(
-                        query,
-                        segment,
-                    )
-
-                    segment_scores.append(score)
-
-                if not segment_scores:
-                    continue
-
-                # Most relevant part of the Article
-                score = max(segment_scores)
-
-            # ------------------------------------------
-            # Preserve original Chunk
-            # ------------------------------------------
-
-            reranked_results.append(
-                RetrievalResult(
-                    chunk=result.chunk,
-                    score=float(score),
-                    source="reranker",
-                    metadata={
-                        "previous_score": result.score,
-                        "previous_source": result.source,
-                    },
-                )
+            score = self._score_chunk(
+                query=query,
+                text=result.chunk.text,
             )
 
-        # ==========================================
+            # --------------------------------------------------
+            # Create new RetrievalResult
+            # --------------------------------------------------
+
+            reranked_result = RetrievalResult(
+                chunk=result.chunk,
+                score=float(score),
+                source="reranker",
+            )
+
+            reranked_results.append(
+                reranked_result
+            )
+
+        # ==================================================
         # Sort
-        # ==========================================
+        # ==================================================
 
         reranked_results.sort(
             key=lambda result: result.score,
             reverse=True,
         )
 
+        # ==================================================
+        # Top K
+        # ==================================================
+
         return reranked_results[:top_k]
 
     # ==================================================
-    # Score
+    # Score Chunk
     # ==================================================
 
-    def _score(
+    def _score_chunk(
         self,
         query: str,
         text: str,
     ) -> float:
 
-        score = self.model.predict(
-            [[query, text]],
-            show_progress_bar=False,
-        )
+        if not text or not text.strip():
+            return float("-inf")
 
-        return float(score[0])
+        # --------------------------------------------------
+        # Tokenize chunk
+        # --------------------------------------------------
 
-    # ==================================================
-    # Token count
-    # ==================================================
-
-    def _count_tokens(
-        self,
-        text: str,
-    ) -> int:
-
-        tokenizer = self.model.tokenizer
-
-        tokens = tokenizer.encode(
+        tokens = self.tokenizer.encode(
             text,
             add_special_tokens=False,
         )
 
-        return len(tokens)
+        # --------------------------------------------------
+        # Short chunk
+        # --------------------------------------------------
+
+        if len(tokens) <= self.segment_tokens:
+
+            score = self.model.predict(
+                [(query, text)],
+                show_progress_bar=False,
+            )
+
+            return float(score[0])
+
+        # --------------------------------------------------
+        # Long chunk
+        # --------------------------------------------------
+
+        segments = self._split_tokens(
+            text
+        )
+
+        if not segments:
+            return float("-inf")
+
+        pairs = [
+            (query, segment)
+            for segment in segments
+        ]
+
+        scores = self.model.predict(
+            pairs,
+            show_progress_bar=False,
+        )
+
+        # --------------------------------------------------
+        # Aggregate
+        # --------------------------------------------------
+
+        return self._aggregate_scores(
+            scores
+        )
 
     # ==================================================
     # Split long text
     # ==================================================
 
-    def _split_text(
+    def _split_tokens(
         self,
         text: str,
     ) -> list[str]:
 
-        tokenizer = self.model.tokenizer
-
-        token_ids = tokenizer.encode(
+        token_ids = self.tokenizer.encode(
             text,
             add_special_tokens=False,
         )
@@ -175,12 +226,12 @@ class CrossEncoderReranker(BaseReranker):
         if not token_ids:
             return []
 
-        segments = []
-
         step = (
             self.segment_tokens
             - self.segment_overlap
         )
+
+        segments = []
 
         for start in range(
             0,
@@ -188,19 +239,52 @@ class CrossEncoderReranker(BaseReranker):
             step,
         ):
 
-            end = start + self.segment_tokens
+            end = (
+                start
+                + self.segment_tokens
+            )
 
-            segment_ids = token_ids[start:end]
+            segment_ids = token_ids[
+                start:end
+            ]
 
-            segment = tokenizer.decode(
+            if not segment_ids:
+                break
+
+            segment = self.tokenizer.decode(
                 segment_ids,
                 skip_special_tokens=True,
             )
 
             if segment.strip():
-                segments.append(segment)
+                segments.append(
+                    segment
+                )
 
             if end >= len(token_ids):
                 break
 
         return segments
+
+    # ==================================================
+    # Aggregate segment scores
+    # ==================================================
+
+    @staticmethod
+    def _aggregate_scores(
+        scores,
+    ) -> float:
+
+        if scores is None:
+            return float("-inf")
+
+        if len(scores) == 0:
+            return float("-inf")
+
+        # --------------------------------------------------
+        # Use maximum segment relevance
+        # --------------------------------------------------
+
+        return float(
+            max(float(score) for score in scores)
+        )

@@ -4,6 +4,9 @@ from retrieval.retrieval_result import RetrievalResult
 
 
 class BaseReranker(ABC):
+    """
+    Base interface for rerankers.
+    """
 
     @abstractmethod
     def rerank(
@@ -13,7 +16,6 @@ class BaseReranker(ABC):
         top_k: int = 5,
     ) -> list[RetrievalResult]:
         """
-        Rerank retrieved results according to their
-        relevance to the query.
+        Rerank retrieval results.
         """
         raise NotImplementedError

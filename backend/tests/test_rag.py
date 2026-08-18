@@ -1,227 +1,345 @@
-from pathlib import Path
+import os
 
-from parser.parser_factory import ParserFactory
-from parser.cleaner import TextCleaner
+from dotenv import load_dotenv
 
-from chunking.chunker_factory import ChunkerFactory
-
-from retrieval.hybrid_retriever import HybridRetriever
-
+from retrieval.retriever_factory import RetrieverFactory
 from reranking.reranker_factory import RerankerFactory
 
 from rag.rag_pipeline import RAGPipeline
+
+from llm.llm_factory import LLMFactory
+
+
+# ==================================================
+# Load environment
+# ==================================================
+
+load_dotenv()
 
 
 # ==================================================
 # CONFIG
 # ==================================================
 
-PATH_FILE = Path(
-    r"D:\legal-ai-assistant\backend\data\sample_contracts\docx_test.docx"
-)
-
-QUERY = "Bên A có nghĩa vụ thanh toán cho Bên B như thế nào?"
-
-HYBRID_TOP_K = 20
+RETRIEVAL_TOP_K = 20
 RERANKER_TOP_K = 5
 
-
-# ==================================================
-# 1. Load document
-# ==================================================
-
-print("=" * 70)
-print("1. LOAD DOCUMENT")
-print("=" * 70)
-
-parser = ParserFactory.get_parser(PATH_FILE)
-
-text = parser.parse(PATH_FILE)
-
-text = TextCleaner.clean(text)
-
-print("Text length:", len(text))
+RERANKER_MAX_LENGTH = 1024
+RERANKER_SEGMENT_TOKENS = 450
+RERANKER_SEGMENT_OVERLAP = 50
 
 
 # ==================================================
-# 2. Chunk
+# Reranker model
 # ==================================================
 
-print()
-print("=" * 70)
-print("2. CHUNKING")
-print("=" * 70)
+RERANKER_MODEL = os.getenv(
+    "RERANKER_MODEL"
+)
 
-chunker = ChunkerFactory.create(text)
-
-chunks = chunker.chunk(text)
-
-print("Chunker:", type(chunker).__name__)
-print("Number of chunks:", len(chunks))
+if not RERANKER_MODEL:
+    raise ValueError(
+        "RERANKER_MODEL is not configured."
+    )
 
 
 # ==================================================
-# 3. Hybrid Retriever
+# 1. Hybrid Retriever
 # ==================================================
 
 print()
 print("=" * 70)
-print("3. HYBRID RETRIEVER")
+print("1. INITIALIZING HYBRID RETRIEVER")
 print("=" * 70)
 
-retriever = HybridRetriever(
-    chunks=chunks,
-    top_k=HYBRID_TOP_K,
-    retrieval_k=20,
+retriever = RetrieverFactory.create(
+    retriever_type="hybrid",
+    top_k=RETRIEVAL_TOP_K,
+    retrieval_k=RETRIEVAL_TOP_K,
     semantic_weight=0.7,
     bm25_weight=0.3,
 )
 
+print("Semantic weight : 0.7")
+print("BM25 weight     : 0.3")
+print("Retrieval top_k :", RETRIEVAL_TOP_K)
+
 
 # ==================================================
-# 4. Reranker
+# 2. Reranker
 # ==================================================
 
 print()
 print("=" * 70)
-print("4. RERANKER")
+print("2. INITIALIZING RERANKER")
 print("=" * 70)
+
+print("Model:", RERANKER_MODEL)
 
 reranker = RerankerFactory.create(
     reranker_type="cross_encoder",
-    max_length=1024,
-    segment_tokens=450,
-    segment_overlap=50,
+    model_name=RERANKER_MODEL,
+    max_length=RERANKER_MAX_LENGTH,
+    segment_tokens=RERANKER_SEGMENT_TOKENS,
+    segment_overlap=RERANKER_SEGMENT_OVERLAP,
 )
 
 
 # ==================================================
-# 5. Create RAG Pipeline
+# 3. LLM
 # ==================================================
 
 print()
 print("=" * 70)
-print("5. RAG PIPELINE")
+print("3. INITIALIZING LLM")
+print("=" * 70)
+
+llm = LLMFactory.create()
+
+print(
+    "LLM:",
+    type(llm).__name__,
+)
+
+print(
+    "Model:",
+    llm.model,
+)
+
+
+# ==================================================
+# 4. RAG Pipeline
+# ==================================================
+
+print()
+print("=" * 70)
+print("4. INITIALIZING RAG PIPELINE")
 print("=" * 70)
 
 rag = RAGPipeline(
     retriever=retriever,
     reranker=reranker,
-    retrieval_top_k=HYBRID_TOP_K,
+    llm=llm,
+    retrieval_top_k=RETRIEVAL_TOP_K,
     reranker_top_k=RERANKER_TOP_K,
 )
 
+print("RAG Pipeline ready.")
+
 
 # ==================================================
-# 6. Run RAG
+# 5. Interactive Q&A
 # ==================================================
 
 print()
 print("=" * 70)
-print("6. RUN RAG")
+print("RAG SYSTEM READY")
 print("=" * 70)
-
-print("Query:")
-print(QUERY)
-
-output = rag.run(QUERY)
-
-
-# ==================================================
-# 7. Display Retrieval Results
-# ==================================================
-
-results = output["results"]
 
 print()
-print("=" * 70)
-print("RERANKED RESULTS")
-print("=" * 70)
+print("Pipeline:")
+print(
+    "Query"
+    " → Hybrid Top 20"
+    " → Reranker Top 5"
+    " → Context"
+    " → Prompt"
+    " → LLM"
+)
 
-print("Number of final results:", len(results))
+print()
+print("Nhập 'exit' hoặc 'quit' để thoát.")
 
 
-for rank, result in enumerate(
-    results,
-    start=1,
-):
+while True:
 
     print()
     print("-" * 70)
 
-    print(f"RANK: {rank}")
+    query = input(
+        "Câu hỏi: "
+    ).strip()
 
-    print("ID:")
-    print(result.chunk.id)
+    # ==================================================
+    # Exit
+    # ==================================================
 
-    print("Reranker score:")
-    print(result.score)
+    if query.lower() in {
+        "exit",
+        "quit",
+    }:
 
-    print("Metadata:")
-    print(result.chunk.metadata)
+        print()
+        print("Đã thoát RAG.")
+        break
 
-    print("\nText:")
-    print(result.chunk.text)
+    # ==================================================
+    # Empty query
+    # ==================================================
 
+    if not query:
 
-# ==================================================
-# 8. Display Context
-# ==================================================
+        print(
+            "Vui lòng nhập câu hỏi."
+        )
 
-context = output["context"]
+        continue
 
-print()
-print("=" * 70)
-print("CONTEXT")
-print("=" * 70)
+    # ==================================================
+    # Run RAG
+    # ==================================================
 
-print(context)
+    print()
+    print("Đang xử lý...")
 
+    try:
 
-# ==================================================
-# 9. Display Prompt
-# ==================================================
+        result = rag.run(
+            query=query
+        )
 
-prompt = output["prompt"]
+    except Exception as e:
 
-print()
-print("=" * 70)
-print("PROMPT")
-print("=" * 70)
+        print()
+        print("=" * 70)
+        print("RAG ERROR")
+        print("=" * 70)
 
-print(prompt)
+        print(
+            type(e).__name__,
+            ":",
+            e,
+        )
 
+        continue
 
-# ==================================================
-# 10. Basic Assertions
-# ==================================================
+    # ==================================================
+    # Results
+    # ==================================================
 
-print()
-print("=" * 70)
-print("TEST")
-print("=" * 70)
+    results = result.get(
+        "results",
+        []
+    )
 
-assert output["query"] == QUERY
+    print()
+    print("=" * 70)
+    print("RETRIEVAL RESULTS")
+    print("=" * 70)
 
-assert isinstance(
-    output["results"],
-    list,
-)
+    print(
+        "Final results:",
+        len(results),
+    )
 
-assert isinstance(
-    output["context"],
-    str,
-)
+    for rank, item in enumerate(
+        results,
+        start=1,
+    ):
 
-assert isinstance(
-    output["prompt"],
-    str,
-)
+        print()
+        print(
+            f"RANK {rank}"
+        )
 
-assert len(results) <= RERANKER_TOP_K
+        print(
+            "Chunk ID:",
+            item.chunk.id,
+        )
 
-if results:
-    assert context.strip() != ""
-    assert prompt.strip() != ""
+        print(
+            "Reranker score:",
+            item.score,
+        )
 
-print("RAG PIPELINE TEST PASSED")
+        print(
+            "Source:",
+            item.source,
+        )
+
+        print(
+            "Text preview:"
+        )
+
+        print(
+            item.chunk.text[:500]
+        )
+
+    # ==================================================
+    # Context
+    # ==================================================
+
+    context = result.get(
+        "context",
+        ""
+    )
+
+    print()
+    print("=" * 70)
+    print("CONTEXT")
+    print("=" * 70)
+
+    print(
+        "Context length:",
+        len(context),
+    )
+
+    print(
+        context
+    )
+
+    # ==================================================
+    # Prompt
+    # ==================================================
+
+    prompt = result.get(
+        "prompt",
+        ""
+    )
+
+    print()
+    print("=" * 70)
+    print("PROMPT")
+    print("=" * 70)
+
+    print(
+        "Prompt length:",
+        len(prompt),
+    )
+
+    print(
+        prompt
+    )
+
+    # ==================================================
+    # Answer
+    # ==================================================
+
+    answer = result.get(
+        "answer",
+        ""
+    )
+
+    print()
+    print("=" * 70)
+    print("ANSWER")
+    print("=" * 70)
+
+    print(
+        answer
+    )
+
+    # ==================================================
+    # Answer debug
+    # ==================================================
+
+    print()
+    print(
+        "Answer type:",
+        type(answer),
+    )
+
+    print(
+        "Answer repr:",
+        repr(answer),
+    )

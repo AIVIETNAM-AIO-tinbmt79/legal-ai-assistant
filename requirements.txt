@@ -1,0 +1,105 @@
+# ==========================
+# Core
+# ==========================
+python-dotenv
+loguru
+pydantic
+pydantic-settings
+
+# ==========================
+# PDF / DOCX
+# ==========================
+pymupdf
+python-docx
+docx2txt
+
+# OCR
+pytesseract
+Pillow
+
+# ==========================
+# LangChain
+# ==========================
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+
+# ==========================
+# LangGraph
+# ==========================
+langgraph
+
+# ==========================
+# Embedding
+# ==========================
+sentence-transformers
+FlagEmbedding
+
+# ==========================
+# HuggingFace
+# ==========================
+transformers
+accelerate
+torch
+
+# ==========================
+# Vector Database
+# ==========================
+qdrant-client
+
+# ==========================
+# BM25
+# ==========================
+rank-bm25
+
+# ==========================
+# Tokenizer
+# ==========================
+tiktoken
+
+# ==========================
+# FastAPI
+# ==========================
+fastapi
+uvicorn[standard]
+python-multipart
+
+# ==========================
+# Database
+# ==========================
+sqlalchemy
+psycopg2-binary
+alembic
+
+# ==========================
+# Authentication
+# ==========================
+python-jose[cryptography]
+passlib[bcrypt]
+
+# ==========================
+# Redis
+# ==========================
+redis
+
+# ==========================
+# Streamlit
+# ==========================
+streamlit
+
+# ==========================
+# Utilities
+# ==========================
+numpy
+pandas
+tqdm
+orjson
+
+# ==========================
+# Testing
+# ==========================
+pytest
+underthesea
+
+openai

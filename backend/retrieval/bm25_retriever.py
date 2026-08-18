@@ -1,89 +1,55 @@
-from rank_bm25 import BM25Okapi
-from underthesea import word_tokenize
+from pathlib import Path
 
-from chunking.chunk_models import Chunk
-from retrieval.base_retriever import BaseRetriever
+from indexing.bm25_indexer import BM25Indexer
 from retrieval.retrieval_result import RetrievalResult
 
 
-class BM25Retriever(BaseRetriever):
+class BM25Retriever:
     """
-    Keyword-based retriever using BM25.
-
-    Vietnamese tokenization is handled by Underthesea.
+    BM25 retriever using persistent BM25 index.
     """
 
     def __init__(
         self,
-        chunks: list[Chunk] | None = None,
+        index_path: str | Path = (
+            "storage/bm25/bm25_index.pkl"
+        ),
+        top_k: int = 5,
     ):
-        self.chunks: list[Chunk] = chunks or []
 
-        self.tokenized_corpus: list[list[str]] = []
+        self.top_k = top_k
 
-        self.bm25: BM25Okapi | None = None
-
-        if self.chunks:
-            self._build_index()
-
-    # ==================================================
-    # Build index
-    # ==================================================
-
-    def _build_index(self) -> None:
-        """
-        Build BM25 index from chunks.
-        """
-
-        self.tokenized_corpus = [
-            self._tokenize(chunk.text)
-            for chunk in self.chunks
-        ]
-
-        self.bm25 = BM25Okapi(
-            self.tokenized_corpus
+        self.indexer = BM25Indexer(
+            index_path=index_path
         )
 
-    # ==================================================
-    # Add chunks
-    # ==================================================
-
-    def add_chunks(
-        self,
-        chunks: list[Chunk],
-    ) -> None:
-        """
-        Add chunks and rebuild the BM25 index.
-        """
-
-        if not chunks:
-            return
-
-        self.chunks.extend(chunks)
-
-        self._build_index()
-
-    # ==================================================
-    # Retrieve
-    # ==================================================
+        self.indexer.load()
 
     def retrieve(
         self,
         query: str,
-        top_k: int = 20,
+        top_k: int | None = None,
     ) -> list[RetrievalResult]:
 
-        if (
-            not query
-            or not query.strip()
-            or self.bm25 is None
-        ):
+        if not query or not query.strip():
             return []
 
-        tokenized_query = self._tokenize(query)
+        if not self.indexer.is_ready:
+            raise RuntimeError(
+                "BM25 index is not ready."
+            )
 
-        scores = self.bm25.get_scores(
-            tokenized_query
+        k = top_k or self.top_k
+
+        query_tokens = (
+            self.indexer.tokenize(query)
+        )
+
+        if not query_tokens:
+            return []
+
+        scores = self.indexer.bm25.get_scores(
+            query_tokens
         )
 
         ranked_indices = sorted(
@@ -92,38 +58,16 @@ class BM25Retriever(BaseRetriever):
             reverse=True,
         )
 
-        results: list[RetrievalResult] = []
+        results = []
 
-        for index in ranked_indices[:top_k]:
+        for index in ranked_indices[:k]:
 
             results.append(
                 RetrievalResult(
-                    chunk=self.chunks[index],
+                    chunk=self.indexer.chunks[index],
                     score=float(scores[index]),
                     source="bm25",
                 )
             )
 
         return results
-
-    # ==================================================
-    # Tokenization
-    # ==================================================
-
-    @staticmethod
-    def _tokenize(
-        text: str,
-    ) -> list[str]:
-        """
-        Vietnamese word segmentation using Underthesea.
-        """
-
-        if not text:
-            return []
-
-        tokenized_text = word_tokenize(
-            text.lower(),
-            format="text",
-        )
-
-        return tokenized_text.split()

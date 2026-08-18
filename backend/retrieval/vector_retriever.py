@@ -1,34 +1,53 @@
-from chunking.chunk_models import Chunk, ChunkMetadata
+from qdrant.vector_store_factory import VectorStoreFactory
 
 from embeddings.embedding_factory import EmbeddingFactory
-from retrieval.base_retriever import BaseRetriever
+
 from retrieval.retrieval_result import RetrievalResult
-from vector_store.vector_store_factory import VectorStoreFactory
 
 
-class VectorRetriever(BaseRetriever):
+class VectorRetriever:
     """
-    Semantic retriever using embeddings + Qdrant.
+    Vector retriever using Qdrant.
+
+    Flow:
+
+        Query
+          ↓
+        Embed query
+          ↓
+        Qdrant
+          ↓
+        Top K vectors
+          ↓
+        RetrievalResult
     """
 
     def __init__(
         self,
-        top_k: int = 20,
+        embedder=None,
+        vector_store=None,
+        top_k: int = 5,
     ):
         self.top_k = top_k
 
-        # ==========================================
-        # Embedding
-        # ==========================================
+        # ==================================================
+        # Embedder
+        # ==================================================
 
-        self.embedder = EmbeddingFactory.create()
+        self.embedder = (
+            embedder
+            or EmbeddingFactory.create()
+        )
 
-        # ==========================================
-        # Vector store
-        # ==========================================
+        # ==================================================
+        # Vector Store
+        # ==================================================
 
-        self.vector_store = VectorStoreFactory.create(
-            vector_size=self.embedder.dimension
+        self.vector_store = (
+            vector_store
+            or VectorStoreFactory.create(
+                dimension=self.embedder.dimension
+            )
         )
 
     # ==================================================
@@ -46,57 +65,81 @@ class VectorRetriever(BaseRetriever):
 
         k = top_k or self.top_k
 
-        # ==========================================
-        # Embed query
-        # ==========================================
+        # --------------------------------------------------
+        # 1. Embed query
+        # --------------------------------------------------
 
         query_embedding = self.embedder.embed_text(
             query
         )
 
-        # ==========================================
-        # Search Qdrant
-        # ==========================================
+        # --------------------------------------------------
+        # 2. Qdrant search
+        # --------------------------------------------------
 
-        results = self.vector_store.search(
+        points = self.vector_store.search(
             query_embedding=query_embedding,
             top_k=k,
         )
 
-        # ==========================================
-        # Convert Qdrant results
-        # ==========================================
+        # --------------------------------------------------
+        # 3. Convert Qdrant results
+        # --------------------------------------------------
 
-        retrieval_results: list[RetrievalResult] = []
+        results = []
 
-        for result in results:
+        for point in points:
 
-            payload = result.payload or {}
+            payload = point.payload or {}
 
-            text = payload.get("text")
+            text = payload.get(
+                "text",
+                "",
+            )
 
-            if not text:
-                continue
-
-            metadata_dict = payload.get(
+            metadata = payload.get(
                 "metadata",
                 {},
             )
 
-            chunk = Chunk(
-                id=str(result.id),
+            # --------------------------------------------------
+            # Reconstruct chunk
+            # --------------------------------------------------
+
+            chunk = self._build_chunk(
+                point_id=point.id,
                 text=text,
-                metadata=ChunkMetadata(
-                    **metadata_dict
-                ),
+                metadata=metadata,
             )
 
-            retrieval_results.append(
+            results.append(
                 RetrievalResult(
                     chunk=chunk,
-                    score=float(result.score),
+                    score=float(point.score),
                     source="vector",
                 )
             )
 
-        return retrieval_results
+        return results
+
+    # ==================================================
+    # Build Chunk
+    # ==================================================
+
+    @staticmethod
+    def _build_chunk(
+        point_id,
+        text: str,
+        metadata: dict,
+    ):
+        """
+        Reconstruct Chunk from Qdrant payload.
+        """
+
+        from chunking.chunk_models import Chunk
+
+        return Chunk(
+            id=str(point_id),
+            text=text,
+            metadata=metadata,
+        )

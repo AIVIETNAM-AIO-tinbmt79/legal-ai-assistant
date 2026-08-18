@@ -4,6 +4,9 @@ from retrieval.retrieval_result import RetrievalResult
 class ContextBuilder:
     """
     Build LLM context from reranked retrieval results.
+
+    Besides the context string, this builder also keeps
+    source information for citation.
     """
 
     def __init__(
@@ -12,10 +15,45 @@ class ContextBuilder:
     ):
         self.max_context_chars = max_context_chars
 
+        self.sources = []
+
+    # ==================================================
+    # Get metadata value
+    # ==================================================
+
+    @staticmethod
+    def _get_metadata(
+        metadata,
+        key: str,
+    ):
+
+        if metadata is None:
+            return None
+
+        # Dictionary
+        if isinstance(
+            metadata,
+            dict,
+        ):
+            return metadata.get(key)
+
+        # Object
+        return getattr(
+            metadata,
+            key,
+            None,
+        )
+
+    # ==================================================
+    # Build context
+    # ==================================================
+
     def build(
         self,
         results: list[RetrievalResult],
     ) -> str:
+
+        self.sources = []
 
         if not results:
             return ""
@@ -27,26 +65,43 @@ class ContextBuilder:
             results,
             start=1,
         ):
+
             chunk = result.chunk
 
-            text = chunk.text.strip()
+            text = (
+                chunk.text.strip()
+                if chunk.text
+                else ""
+            )
 
             if not text:
                 continue
 
             metadata = chunk.metadata
 
-            article = getattr(
+            article = self._get_metadata(
                 metadata,
                 "article",
-                None,
             )
 
-            section_title = getattr(
+            section_title = self._get_metadata(
                 metadata,
                 "section_title",
-                None,
             )
+
+            document_id = self._get_metadata(
+                metadata,
+                "document_id",
+            )
+
+            source_file = self._get_metadata(
+                metadata,
+                "source_file",
+            )
+
+            # ==========================================
+            # Build source label
+            # ==========================================
 
             header_parts = []
 
@@ -57,32 +112,70 @@ class ContextBuilder:
 
             if section_title:
                 header_parts.append(
-                    section_title
+                    str(section_title)
                 )
 
             if header_parts:
+
                 header = " - ".join(
                     header_parts
                 )
+
             else:
+
                 header = f"Chunk {index}"
+
+            # ==========================================
+            # Build context
+            # ==========================================
 
             part = (
                 f"[{header}]\n"
                 f"{text}"
             )
 
-            # Check context limit
+            # ==========================================
+            # Context limit
+            # ==========================================
+
             if (
                 current_length + len(part)
                 > self.max_context_chars
             ):
                 break
 
-            context_parts.append(part)
+            context_parts.append(
+                part
+            )
 
             current_length += len(part)
+
+            # ==========================================
+            # Save source
+            # ==========================================
+
+            source = {
+                "rank": index,
+                "chunk_id": chunk.id,
+                "article": article,
+                "section_title": section_title,
+                "document_id": document_id,
+                "source_file": source_file,
+                "score": result.score,
+                "text": text,
+            }
+
+            self.sources.append(
+                source
+            )
 
         return "\n\n".join(
             context_parts
         )
+
+    # ==================================================
+    # Get sources
+    # ==================================================
+
+    def get_sources(self):
+        return self.sources

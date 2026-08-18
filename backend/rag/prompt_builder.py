@@ -17,6 +17,8 @@ class PromptBuilder:
     tài liệu không cung cấp đủ thông tin để kết luận.
     4. Khi có thể, hãy chỉ ra điều/khoản liên quan.
     5. Trả lời bằng tiếng Việt, rõ ràng và chính xác.
+    6. KHÔNG viết quá trình suy nghĩ, phân tích hoặc reasoning.
+    7. CHỈ trả về câu trả lời cuối cùng cho người dùng.
 """.strip()
 
     def build(

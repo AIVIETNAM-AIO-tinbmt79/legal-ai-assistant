@@ -1,4 +1,4 @@
-from retrieval.retriever_factory import RetrieverFactory
+from retrieval.vector_retriever import VectorRetriever
 
 
 # ==================================================
@@ -10,24 +10,15 @@ QUERY = (
     "thanh toán cho Bên B"
 )
 
-HYBRID_TOP_K = 5
-RETRIEVAL_K = 20
+TOP_K = 5
 
 
 # ==================================================
-# Create Hybrid Retriever
+# Create Retriever
 # ==================================================
 
-retriever = RetrieverFactory.create(
-    retriever_type="hybrid",
-
-    top_k=HYBRID_TOP_K,
-
-    retrieval_k=RETRIEVAL_K,
-
-    semantic_weight=0.7,
-
-    bm25_weight=0.3,
+retriever = VectorRetriever(
+    top_k=TOP_K,
 )
 
 
@@ -37,7 +28,7 @@ retriever = RetrieverFactory.create(
 
 results = retriever.retrieve(
     query=QUERY,
-    top_k=HYBRID_TOP_K,
+    top_k=TOP_K,
 )
 
 
@@ -47,7 +38,7 @@ results = retriever.retrieve(
 
 print()
 print("=" * 70)
-print("HYBRID RETRIEVAL")
+print("VECTOR RETRIEVAL - QDRANT")
 print("=" * 70)
 
 print("Query:")

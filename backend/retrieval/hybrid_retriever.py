@@ -1,48 +1,42 @@
-from chunking.chunk_models import Chunk
+from typing import Optional
 
-from retrieval.base_retriever import BaseRetriever
+from retrieval.vector_retriever import VectorRetriever
 from retrieval.bm25_retriever import BM25Retriever
 from retrieval.retrieval_result import RetrievalResult
-from retrieval.vector_retriever import VectorRetriever
 
 
-class HybridRetriever(BaseRetriever):
+class HybridRetriever:
     """
-    Hybrid retriever.
+    Hybrid retriever combining:
 
-    Combines:
+        Vector Search + BM25
 
-        Dense / Semantic Retrieval
-        +
-        BM25 Retrieval
+    Score:
 
-    Fusion:
-        Weighted Reciprocal Rank Fusion (RRF)
+        hybrid_score =
+            semantic_weight * normalized_vector_score
+            +
+            bm25_weight * normalized_bm25_score
 
     Default:
-        Semantic = 0.7
-        BM25     = 0.3
+
+        semantic_weight = 0.7
+        bm25_weight = 0.3
     """
 
     def __init__(
         self,
-        chunks: list[Chunk] | None = None,
-        top_k: int = 20,
+        vector_retriever: Optional[VectorRetriever] = None,
+        bm25_retriever: Optional[BM25Retriever] = None,
+        top_k: int = 5,
         retrieval_k: int = 20,
-        rrf_k: int = 60,
         semantic_weight: float = 0.7,
         bm25_weight: float = 0.3,
     ):
-        self.top_k = top_k
-        self.retrieval_k = retrieval_k
-        self.rrf_k = rrf_k
 
-        self.semantic_weight = semantic_weight
-        self.bm25_weight = bm25_weight
-
-        # ==========================================
+        # ==================================================
         # Validate weights
-        # ==========================================
+        # ==================================================
 
         if semantic_weight < 0:
             raise ValueError(
@@ -54,21 +48,49 @@ class HybridRetriever(BaseRetriever):
                 "bm25_weight must be >= 0"
             )
 
-        if semantic_weight + bm25_weight == 0:
-            raise ValueError(
-                "At least one weight must be > 0"
-            )
-
-        # ==========================================
-        # Retrievers
-        # ==========================================
-
-        self.vector_retriever = VectorRetriever(
-            top_k=retrieval_k
+        total_weight = (
+            semantic_weight
+            + bm25_weight
         )
 
-        self.bm25_retriever = BM25Retriever(
-            chunks=chunks
+        if total_weight <= 0:
+            raise ValueError(
+                "At least one retrieval weight "
+                "must be greater than 0."
+            )
+
+        # Normalize weights
+        self.semantic_weight = (
+            semantic_weight / total_weight
+        )
+
+        self.bm25_weight = (
+            bm25_weight / total_weight
+        )
+
+        # ==================================================
+        # Configuration
+        # ==================================================
+
+        self.top_k = top_k
+        self.retrieval_k = retrieval_k
+
+        # ==================================================
+        # Retrievers
+        # ==================================================
+
+        self.vector_retriever = (
+            vector_retriever
+            or VectorRetriever(
+                top_k=retrieval_k
+            )
+        )
+
+        self.bm25_retriever = (
+            bm25_retriever
+            or BM25Retriever(
+                top_k=retrieval_k
+            )
         )
 
     # ==================================================
@@ -78,17 +100,17 @@ class HybridRetriever(BaseRetriever):
     def retrieve(
         self,
         query: str,
-        top_k: int | None = None,
+        top_k: Optional[int] = None,
     ) -> list[RetrievalResult]:
 
         if not query or not query.strip():
             return []
 
-        final_top_k = top_k or self.top_k
+        final_k = top_k or self.top_k
 
-        # ==========================================
-        # 1. Semantic retrieval
-        # ==========================================
+        # ==================================================
+        # 1. Vector Retrieval
+        # ==================================================
 
         vector_results = (
             self.vector_retriever.retrieve(
@@ -97,9 +119,9 @@ class HybridRetriever(BaseRetriever):
             )
         )
 
-        # ==========================================
-        # 2. BM25 retrieval
-        # ==========================================
+        # ==================================================
+        # 2. BM25 Retrieval
+        # ==================================================
 
         bm25_results = (
             self.bm25_retriever.retrieve(
@@ -108,84 +130,135 @@ class HybridRetriever(BaseRetriever):
             )
         )
 
-        # ==========================================
-        # 3. Weighted RRF
-        # ==========================================
+        # ==================================================
+        # 3. Normalize scores
+        # ==================================================
 
-        scores: dict[str, float] = {}
+        vector_scores = {
+            result.chunk.id: result.score
+            for result in vector_results
+        }
 
-        chunks: dict[str, Chunk] = {}
+        bm25_scores = {
+            result.chunk.id: result.score
+            for result in bm25_results
+        }
 
-        # ------------------------------------------
-        # Semantic
-        # ------------------------------------------
-
-        for rank, result in enumerate(
-            vector_results,
-            start=1,
-        ):
-
-            chunk_id = result.chunk.id
-
-            rrf_score = (
-                self.semantic_weight
-                / (self.rrf_k + rank)
-            )
-
-            scores[chunk_id] = (
-                scores.get(chunk_id, 0.0)
-                + rrf_score
-            )
-
-            chunks[chunk_id] = result.chunk
-
-        # ------------------------------------------
-        # BM25
-        # ------------------------------------------
-
-        for rank, result in enumerate(
-            bm25_results,
-            start=1,
-        ):
-
-            chunk_id = result.chunk.id
-
-            rrf_score = (
-                self.bm25_weight
-                / (self.rrf_k + rank)
-            )
-
-            scores[chunk_id] = (
-                scores.get(chunk_id, 0.0)
-                + rrf_score
-            )
-
-            chunks[chunk_id] = result.chunk
-
-        # ==========================================
-        # 4. Sort
-        # ==========================================
-
-        ranked = sorted(
-            scores.items(),
-            key=lambda item: item[1],
-            reverse=True,
+        normalized_vector = self._normalize_scores(
+            vector_scores
         )
 
-        # ==========================================
-        # 5. Return
-        # ==========================================
+        normalized_bm25 = self._normalize_scores(
+            bm25_scores
+        )
 
-        results: list[RetrievalResult] = []
+        # ==================================================
+        # 4. Merge candidates
+        # ==================================================
 
-        for chunk_id, score in ranked[:final_top_k]:
+        candidate_ids = set(
+            normalized_vector.keys()
+        ) | set(
+            normalized_bm25.keys()
+        )
 
-            results.append(
+        # Keep chunk references
+        chunks = {}
+
+        for result in vector_results:
+            chunks[result.chunk.id] = result.chunk
+
+        for result in bm25_results:
+            chunks[result.chunk.id] = result.chunk
+
+        # ==================================================
+        # 5. Hybrid scoring
+        # ==================================================
+
+        hybrid_results = []
+
+        for chunk_id in candidate_ids:
+
+            vector_score = normalized_vector.get(
+                chunk_id,
+                0.0,
+            )
+
+            bm25_score = normalized_bm25.get(
+                chunk_id,
+                0.0,
+            )
+
+            hybrid_score = (
+                self.semantic_weight
+                * vector_score
+                +
+                self.bm25_weight
+                * bm25_score
+            )
+
+            hybrid_results.append(
                 RetrievalResult(
                     chunk=chunks[chunk_id],
-                    score=float(score),
+                    score=float(hybrid_score),
                     source="hybrid",
                 )
             )
 
-        return results
+        # ==================================================
+        # 6. Sort
+        # ==================================================
+
+        hybrid_results.sort(
+            key=lambda result: result.score,
+            reverse=True,
+        )
+
+        # ==================================================
+        # 7. Top K
+        # ==================================================
+
+        return hybrid_results[:final_k]
+
+    # ==================================================
+    # Score normalization
+    # ==================================================
+
+    @staticmethod
+    def _normalize_scores(
+        scores: dict[str, float],
+    ) -> dict[str, float]:
+
+        if not scores:
+            return {}
+
+        values = list(
+            scores.values()
+        )
+
+        min_score = min(values)
+        max_score = max(values)
+
+        # ----------------------------------------------
+        # All scores are equal
+        # ----------------------------------------------
+
+        if max_score == min_score:
+
+            return {
+                chunk_id: 1.0
+                for chunk_id in scores
+            }
+
+        # ----------------------------------------------
+        # Min-Max normalization
+        # ----------------------------------------------
+
+        return {
+            chunk_id: (
+                (score - min_score)
+                / (max_score - min_score)
+            )
+            for chunk_id, score
+            in scores.items()
+        }

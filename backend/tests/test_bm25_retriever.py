@@ -1,4 +1,4 @@
-from retrieval.retriever_factory import RetrieverFactory
+from retrieval.bm25_retriever import BM25Retriever
 
 
 # ==================================================
@@ -10,24 +10,20 @@ QUERY = (
     "thanh toán cho Bên B"
 )
 
-HYBRID_TOP_K = 5
-RETRIEVAL_K = 20
+INDEX_PATH = (
+    "storage/bm25/bm25_index.pkl"
+)
+
+TOP_K = 5
 
 
 # ==================================================
-# Create Hybrid Retriever
+# Create Retriever
 # ==================================================
 
-retriever = RetrieverFactory.create(
-    retriever_type="hybrid",
-
-    top_k=HYBRID_TOP_K,
-
-    retrieval_k=RETRIEVAL_K,
-
-    semantic_weight=0.7,
-
-    bm25_weight=0.3,
+retriever = BM25Retriever(
+    index_path=INDEX_PATH,
+    top_k=TOP_K,
 )
 
 
@@ -37,7 +33,7 @@ retriever = RetrieverFactory.create(
 
 results = retriever.retrieve(
     query=QUERY,
-    top_k=HYBRID_TOP_K,
+    top_k=TOP_K,
 )
 
 
@@ -47,7 +43,7 @@ results = retriever.retrieve(
 
 print()
 print("=" * 70)
-print("HYBRID RETRIEVAL")
+print("BM25 RETRIEVAL")
 print("=" * 70)
 
 print("Query:")
