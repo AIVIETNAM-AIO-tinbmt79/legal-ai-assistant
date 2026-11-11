@@ -14,10 +14,10 @@ from indexing.bm25_indexer import BM25Indexer
 
 class DocumentIndexer:
     """
-    Index a document into:
+    Index a contract/document into:
 
         1. Qdrant vector store
-        2. Persistent BM25 index
+        2. Shared persistent BM25 index
 
     Flow:
 
@@ -29,11 +29,13 @@ class DocumentIndexer:
             ↓
         Chunker
             ↓
+        Attach contract_id
+            ↓
         ┌───────────────┐
         ↓               ↓
     Embedding        BM25Indexer
         ↓               ↓
-      Qdrant        bm25_index.pkl
+      Qdrant        Shared BM25
     """
 
     def __init__(
@@ -79,6 +81,7 @@ class DocumentIndexer:
     def index(
         self,
         file_path: str | Path,
+        contract_id: str | None = None,
     ) -> dict:
 
         file_path = Path(file_path)
@@ -136,15 +139,18 @@ class DocumentIndexer:
             )
 
         # ==================================================
-        # 4. Embedding
+        # 4. Attach contract_id
         # ==================================================
 
-        # IMPORTANT:
-        #
-        # embed_text() currently accepts ONE string,
-        # not list[str].
-        #
-        # Therefore embed each chunk separately.
+        if contract_id:
+            for chunk in chunks:
+                chunk.metadata.contract_id = (
+                    contract_id
+                )
+
+        # ==================================================
+        # 5. Embedding
+        # ==================================================
 
         embeddings = [
             self.embedder.embed_text(
@@ -160,7 +166,7 @@ class DocumentIndexer:
             )
 
         # ==================================================
-        # 5. Store vectors in Qdrant
+        # 6. Store vectors in Qdrant
         # ==================================================
 
         self.vector_store.add_chunks(
@@ -169,19 +175,29 @@ class DocumentIndexer:
         )
 
         # ==================================================
-        # 6. Build BM25 index
+        # 7. Update shared BM25
         # ==================================================
 
-        self.bm25_indexer.build_and_save(
-            chunks
-        )
+        if contract_id:
+
+            self.bm25_indexer.upsert_contract(
+                chunks=chunks,
+                contract_id=contract_id,
+            )
+
+        else:
+
+            self.bm25_indexer.build_and_save(
+                chunks
+            )
 
         # ==================================================
-        # 7. Return result
+        # 8. Return result
         # ==================================================
 
         return {
             "file": str(file_path),
+            "contract_id": contract_id,
             "chunks": len(chunks),
             "embeddings": len(embeddings),
             "vector_dimension": self.embedder.dimension,

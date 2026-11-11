@@ -13,7 +13,7 @@ class BaseReranker(ABC):
         self,
         query: str,
         results: list[RetrievalResult],
-        top_k: int = 5,
+        top_k: int | None = None,
     ) -> list[RetrievalResult]:
         """
         Rerank retrieval results.

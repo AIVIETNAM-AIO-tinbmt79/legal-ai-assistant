@@ -1,8 +1,16 @@
-from typing import Optional
+from retrieval.vector_retriever import (
+    VectorRetriever,
+)
 
-from retrieval.vector_retriever import VectorRetriever
-from retrieval.bm25_retriever import BM25Retriever
-from retrieval.retrieval_result import RetrievalResult
+from retrieval.bm25_retriever import (
+    BM25Retriever,
+)
+
+from retrieval.retrieval_result import (
+    RetrievalResult,
+)
+
+from config.settings import settings
 
 
 class HybridRetriever:
@@ -14,43 +22,82 @@ class HybridRetriever:
     Score:
 
         hybrid_score =
-            semantic_weight * normalized_vector_score
+            semantic_weight
+            * normalized_vector_score
             +
-            bm25_weight * normalized_bm25_score
-
-    Default:
-
-        semantic_weight = 0.7
-        bm25_weight = 0.3
+            bm25_weight
+            * normalized_bm25_score
     """
 
     def __init__(
         self,
-        vector_retriever: Optional[VectorRetriever] = None,
-        bm25_retriever: Optional[BM25Retriever] = None,
-        top_k: int = 5,
-        retrieval_k: int = 20,
-        semantic_weight: float = 0.7,
-        bm25_weight: float = 0.3,
+        vector_retriever: VectorRetriever | None = None,
+        bm25_retriever: BM25Retriever | None = None,
+        top_k: int | None = None,
+        retrieval_k: int | None = None,
+        semantic_weight: float | None = None,
+        bm25_weight: float | None = None,
     ):
+
+        # ==================================================
+        # Configuration
+        # ==================================================
+
+        self.top_k = (
+            top_k
+            if top_k is not None
+            else settings.RETRIEVAL_TOP_K
+        )
+
+        self.retrieval_k = (
+            retrieval_k
+            if retrieval_k is not None
+            else settings.RETRIEVAL_TOP_K
+        )
+
+        self.semantic_weight = (
+            semantic_weight
+            if semantic_weight is not None
+            else settings.SEMANTIC_WEIGHT
+        )
+
+        self.bm25_weight = (
+            bm25_weight
+            if bm25_weight is not None
+            else settings.BM25_WEIGHT
+        )
+
+        # ==================================================
+        # Validate K
+        # ==================================================
+
+        if self.top_k <= 0:
+            raise ValueError(
+                "top_k must be greater than 0."
+            )
+
+        if self.retrieval_k <= 0:
+            raise ValueError(
+                "retrieval_k must be greater than 0."
+            )
 
         # ==================================================
         # Validate weights
         # ==================================================
 
-        if semantic_weight < 0:
+        if self.semantic_weight < 0:
             raise ValueError(
                 "semantic_weight must be >= 0"
             )
 
-        if bm25_weight < 0:
+        if self.bm25_weight < 0:
             raise ValueError(
                 "bm25_weight must be >= 0"
             )
 
         total_weight = (
-            semantic_weight
-            + bm25_weight
+            self.semantic_weight
+            + self.bm25_weight
         )
 
         if total_weight <= 0:
@@ -60,20 +107,9 @@ class HybridRetriever:
             )
 
         # Normalize weights
-        self.semantic_weight = (
-            semantic_weight / total_weight
-        )
 
-        self.bm25_weight = (
-            bm25_weight / total_weight
-        )
-
-        # ==================================================
-        # Configuration
-        # ==================================================
-
-        self.top_k = top_k
-        self.retrieval_k = retrieval_k
+        self.semantic_weight /= total_weight
+        self.bm25_weight /= total_weight
 
         # ==================================================
         # Retrievers
@@ -81,15 +117,17 @@ class HybridRetriever:
 
         self.vector_retriever = (
             vector_retriever
-            or VectorRetriever(
-                top_k=retrieval_k
+            if vector_retriever is not None
+            else VectorRetriever(
+                top_k=self.retrieval_k
             )
         )
 
         self.bm25_retriever = (
             bm25_retriever
-            or BM25Retriever(
-                top_k=retrieval_k
+            if bm25_retriever is not None
+            else BM25Retriever(
+                top_k=self.retrieval_k
             )
         )
 
@@ -100,13 +138,25 @@ class HybridRetriever:
     def retrieve(
         self,
         query: str,
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
+        contract_id: str | None = None,
     ) -> list[RetrievalResult]:
 
         if not query or not query.strip():
             return []
 
-        final_k = top_k or self.top_k
+        # ==================================================
+        # Final Top K
+        # ==================================================
+
+        final_k = (
+            top_k
+            if top_k is not None
+            else self.top_k
+        )
+
+        if final_k <= 0:
+            return []
 
         # ==================================================
         # 1. Vector Retrieval
@@ -116,6 +166,7 @@ class HybridRetriever:
             self.vector_retriever.retrieve(
                 query=query,
                 top_k=self.retrieval_k,
+                contract_id=contract_id,
             )
         )
 
@@ -127,11 +178,12 @@ class HybridRetriever:
             self.bm25_retriever.retrieve(
                 query=query,
                 top_k=self.retrieval_k,
+                contract_id=contract_id,
             )
         )
 
         # ==================================================
-        # 3. Normalize scores
+        # 3. Normalize Scores
         # ==================================================
 
         vector_scores = {
@@ -144,25 +196,35 @@ class HybridRetriever:
             for result in bm25_results
         }
 
-        normalized_vector = self._normalize_scores(
-            vector_scores
+        normalized_vector = (
+            self._normalize_scores(
+                vector_scores
+            )
         )
 
-        normalized_bm25 = self._normalize_scores(
-            bm25_scores
+        normalized_bm25 = (
+            self._normalize_scores(
+                bm25_scores
+            )
         )
 
         # ==================================================
-        # 4. Merge candidates
+        # 4. Merge Candidates
         # ==================================================
 
-        candidate_ids = set(
-            normalized_vector.keys()
-        ) | set(
-            normalized_bm25.keys()
+        candidate_ids = (
+            set(normalized_vector.keys())
+            |
+            set(normalized_bm25.keys())
         )
 
-        # Keep chunk references
+        if not candidate_ids:
+            return []
+
+        # ==================================================
+        # 5. Keep Chunk References
+        # ==================================================
+
         chunks = {}
 
         for result in vector_results:
@@ -172,21 +234,25 @@ class HybridRetriever:
             chunks[result.chunk.id] = result.chunk
 
         # ==================================================
-        # 5. Hybrid scoring
+        # 6. Hybrid Scoring
         # ==================================================
 
         hybrid_results = []
 
         for chunk_id in candidate_ids:
 
-            vector_score = normalized_vector.get(
-                chunk_id,
-                0.0,
+            vector_score = (
+                normalized_vector.get(
+                    chunk_id,
+                    0.0,
+                )
             )
 
-            bm25_score = normalized_bm25.get(
-                chunk_id,
-                0.0,
+            bm25_score = (
+                normalized_bm25.get(
+                    chunk_id,
+                    0.0,
+                )
             )
 
             hybrid_score = (
@@ -206,7 +272,7 @@ class HybridRetriever:
             )
 
         # ==================================================
-        # 6. Sort
+        # 7. Sort
         # ==================================================
 
         hybrid_results.sort(
@@ -214,14 +280,10 @@ class HybridRetriever:
             reverse=True,
         )
 
-        # ==================================================
-        # 7. Top K
-        # ==================================================
-
         return hybrid_results[:final_k]
 
     # ==================================================
-    # Score normalization
+    # Normalize Scores
     # ==================================================
 
     @staticmethod
@@ -232,16 +294,14 @@ class HybridRetriever:
         if not scores:
             return {}
 
-        values = list(
-            scores.values()
-        )
+        values = list(scores.values())
 
         min_score = min(values)
         max_score = max(values)
 
-        # ----------------------------------------------
-        # All scores are equal
-        # ----------------------------------------------
+        # --------------------------------------------------
+        # All scores are identical
+        # --------------------------------------------------
 
         if max_score == min_score:
 
@@ -250,15 +310,16 @@ class HybridRetriever:
                 for chunk_id in scores
             }
 
-        # ----------------------------------------------
+        # --------------------------------------------------
         # Min-Max normalization
-        # ----------------------------------------------
+        # --------------------------------------------------
+
+        denominator = max_score - min_score
 
         return {
             chunk_id: (
                 (score - min_score)
-                / (max_score - min_score)
+                / denominator
             )
-            for chunk_id, score
-            in scores.items()
+            for chunk_id, score in scores.items()
         }

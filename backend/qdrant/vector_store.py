@@ -2,25 +2,27 @@ from typing import Any
 
 from qdrant_client.models import (
     Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
     PointStruct,
     VectorParams,
 )
 
+from config.settings import settings
+
 from chunking.chunk_models import Chunk
 
-from qdrant.qdrant_client import QdrantClientManager
-from qdrant.qdrant_config import QDRANT_COLLECTION
+from qdrant.qdrant_client import (
+    QdrantClientManager,
+)
 
 
 class QdrantVectorStore:
     """
     Vector store for legal document chunks.
 
-    Responsibilities:
-        - Manage Qdrant collection
-        - Store chunks + embeddings
-        - Search similar vectors
-        - Delete chunks
+    Supports contract-scoped retrieval.
     """
 
     def __init__(
@@ -28,14 +30,24 @@ class QdrantVectorStore:
         vector_size: int,
     ):
 
-        self.client_manager = QdrantClientManager()
+        # ==========================================
+        # Qdrant Client
+        # ==========================================
+
+        self.client_manager = (
+            QdrantClientManager()
+        )
 
         self.client = (
             self.client_manager.get_client()
         )
 
+        # ==========================================
+        # Collection
+        # ==========================================
+
         self.collection_name = (
-            QDRANT_COLLECTION
+            settings.QDRANT_COLLECTION
         )
 
         self.vector_size = vector_size
@@ -46,10 +58,9 @@ class QdrantVectorStore:
     # Collection
     # ==================================================
 
-    def _ensure_collection(self) -> None:
-        """
-        Create collection if it does not exist.
-        """
+    def _ensure_collection(
+        self,
+    ) -> None:
 
         collections = (
             self.client.get_collections()
@@ -67,6 +78,7 @@ class QdrantVectorStore:
 
         self.client.create_collection(
             collection_name=self.collection_name,
+
             vectors_config=VectorParams(
                 size=self.vector_size,
                 distance=Distance.COSINE,
@@ -74,7 +86,7 @@ class QdrantVectorStore:
         )
 
     # ==================================================
-    # Add chunks
+    # Add Chunks
     # ==================================================
 
     def add_chunks(
@@ -82,9 +94,6 @@ class QdrantVectorStore:
         chunks: list[Chunk],
         embeddings: list[list[float]],
     ) -> None:
-        """
-        Store chunks and their embeddings.
-        """
 
         if not chunks:
             return
@@ -104,9 +113,11 @@ class QdrantVectorStore:
 
             payload = {
                 "text": chunk.text,
-                "metadata": self._metadata_to_dict(
-                    chunk.metadata
-                ),
+
+                "metadata":
+                    self._metadata_to_dict(
+                        chunk.metadata
+                    ),
             }
 
             points.append(
@@ -130,19 +141,45 @@ class QdrantVectorStore:
         self,
         query_embedding: list[float],
         top_k: int = 5,
+        contract_id: str | None = None,
     ):
         """
-        Search for the most similar chunks.
+        Search similar vectors.
+
+        If contract_id is provided, only chunks belonging
+        to that contract are returned.
         """
 
         if not query_embedding:
             return []
 
-        results = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_embedding,
-            limit=top_k,
-            with_payload=True,
+        query_filter = None
+
+        if contract_id:
+
+            query_filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="metadata.contract_id",
+                        match=MatchValue(
+                            value=contract_id
+                        ),
+                    )
+                ]
+            )
+
+        results = (
+            self.client.query_points(
+                collection_name=self.collection_name,
+
+                query=query_embedding,
+
+                limit=top_k,
+
+                query_filter=query_filter,
+
+                with_payload=True,
+            )
         )
 
         return results.points
@@ -155,30 +192,29 @@ class QdrantVectorStore:
         self,
         chunk_ids: list[str],
     ) -> None:
-        """
-        Delete chunks from Qdrant.
-        """
 
         if not chunk_ids:
             return
 
         self.client.delete(
             collection_name=self.collection_name,
+
             points_selector=chunk_ids,
         )
 
     # ==================================================
-    # Collection info
+    # Collection Info
     # ==================================================
 
-    def count(self) -> int:
-        """
-        Return number of stored vectors.
-        """
+    def count(
+        self,
+    ) -> int:
 
-        result = self.client.count(
-            collection_name=self.collection_name,
-            exact=True,
+        result = (
+            self.client.count(
+                collection_name=self.collection_name,
+                exact=True,
+            )
         )
 
         return result.count
@@ -191,17 +227,26 @@ class QdrantVectorStore:
     def _metadata_to_dict(
         metadata: Any,
     ) -> dict:
-        """
-        Convert ChunkMetadata into a dictionary.
-        """
 
-        if hasattr(metadata, "model_dump"):
+        if hasattr(
+            metadata,
+            "model_dump",
+        ):
+
             return metadata.model_dump()
 
-        if hasattr(metadata, "dict"):
+        if hasattr(
+            metadata,
+            "dict",
+        ):
+
             return metadata.dict()
 
-        if hasattr(metadata, "__dict__"):
+        if hasattr(
+            metadata,
+            "__dict__",
+        ):
+
             return metadata.__dict__
 
         return {}

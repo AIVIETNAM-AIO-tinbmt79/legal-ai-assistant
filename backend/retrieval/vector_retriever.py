@@ -1,51 +1,48 @@
-from qdrant.vector_store_factory import VectorStoreFactory
+from config.settings import settings
 
-from embeddings.embedding_factory import EmbeddingFactory
+from qdrant.vector_store_factory import (
+    VectorStoreFactory,
+)
 
-from retrieval.retrieval_result import RetrievalResult
+from embeddings.embedding_factory import (
+    EmbeddingFactory,
+)
+
+from retrieval.retrieval_result import (
+    RetrievalResult,
+)
 
 
 class VectorRetriever:
     """
     Vector retriever using Qdrant.
 
-    Flow:
-
-        Query
-          ↓
-        Embed query
-          ↓
-        Qdrant
-          ↓
-        Top K vectors
-          ↓
-        RetrievalResult
+    Supports contract-scoped retrieval.
     """
 
     def __init__(
         self,
         embedder=None,
         vector_store=None,
-        top_k: int = 5,
+        top_k: int | None = None,
     ):
-        self.top_k = top_k
 
-        # ==================================================
-        # Embedder
-        # ==================================================
+        self.top_k = (
+            top_k
+            if top_k is not None
+            else settings.RETRIEVAL_TOP_K
+        )
 
         self.embedder = (
             embedder
-            or EmbeddingFactory.create()
+            if embedder is not None
+            else EmbeddingFactory.create()
         )
-
-        # ==================================================
-        # Vector Store
-        # ==================================================
 
         self.vector_store = (
             vector_store
-            or VectorStoreFactory.create(
+            if vector_store is not None
+            else VectorStoreFactory.create(
                 dimension=self.embedder.dimension
             )
         )
@@ -58,39 +55,57 @@ class VectorRetriever:
         self,
         query: str,
         top_k: int | None = None,
+        contract_id: str | None = None,
     ) -> list[RetrievalResult]:
 
         if not query or not query.strip():
             return []
 
-        k = top_k or self.top_k
-
-        # --------------------------------------------------
-        # 1. Embed query
-        # --------------------------------------------------
-
-        query_embedding = self.embedder.embed_text(
-            query
+        k = (
+            top_k
+            if top_k is not None
+            else self.top_k
         )
 
-        # --------------------------------------------------
-        # 2. Qdrant search
-        # --------------------------------------------------
+        # ==========================================
+        # Embed query
+        # ==========================================
 
-        points = self.vector_store.search(
-            query_embedding=query_embedding,
-            top_k=k,
+        query_embedding = (
+            self.embedder.embed_text(
+                query
+            )
         )
 
-        # --------------------------------------------------
-        # 3. Convert Qdrant results
-        # --------------------------------------------------
+        if not query_embedding:
+            return []
 
-        results = []
+        # ==========================================
+        # Qdrant Search
+        # ==========================================
+
+        points = (
+            self.vector_store.search(
+                query_embedding=query_embedding,
+                top_k=k,
+                contract_id=contract_id,
+            )
+        )
+
+        # ==========================================
+        # Convert results
+        # ==========================================
+
+        results: list[
+            RetrievalResult
+        ] = []
 
         for point in points:
 
-            payload = point.payload or {}
+            payload = (
+                point.payload
+                or {}
+            )
 
             text = payload.get(
                 "text",
@@ -102,20 +117,20 @@ class VectorRetriever:
                 {},
             )
 
-            # --------------------------------------------------
-            # Reconstruct chunk
-            # --------------------------------------------------
-
-            chunk = self._build_chunk(
-                point_id=point.id,
-                text=text,
-                metadata=metadata,
+            chunk = (
+                self._build_chunk(
+                    point_id=point.id,
+                    text=text,
+                    metadata=metadata,
+                )
             )
 
             results.append(
                 RetrievalResult(
                     chunk=chunk,
-                    score=float(point.score),
+                    score=float(
+                        point.score
+                    ),
                     source="vector",
                 )
             )
@@ -132,11 +147,10 @@ class VectorRetriever:
         text: str,
         metadata: dict,
     ):
-        """
-        Reconstruct Chunk from Qdrant payload.
-        """
 
-        from chunking.chunk_models import Chunk
+        from chunking.chunk_models import (
+            Chunk,
+        )
 
         return Chunk(
             id=str(point_id),

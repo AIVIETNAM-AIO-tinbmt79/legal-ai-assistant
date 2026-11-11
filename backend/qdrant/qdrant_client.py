@@ -1,9 +1,6 @@
 from qdrant_client import QdrantClient
 
-from qdrant.qdrant_config import (
-    QDRANT_URL,
-    QDRANT_API_KEY,
-)
+from config.settings import settings
 
 
 class QdrantClientManager:
@@ -13,21 +10,42 @@ class QdrantClientManager:
 
     def __init__(self):
 
-        if QDRANT_API_KEY:
+        self.url = settings.QDRANT_URL
+        self.api_key = settings.QDRANT_API_KEY
+
+        # ==========================================
+        # Initialize Qdrant Client
+        # ==========================================
+
+        if self.api_key:
+
             self.client = QdrantClient(
-                url=QDRANT_URL,
-                api_key=QDRANT_API_KEY,
+                url=self.url,
+                api_key=self.api_key,
             )
+
         else:
+
             self.client = QdrantClient(
-                url=QDRANT_URL,
+                url=self.url,
             )
+
+
+    # ==================================================
+    # Get Client
+    # ==================================================
 
     def get_client(self) -> QdrantClient:
         """
         Return Qdrant client.
         """
+
         return self.client
+
+
+    # ==================================================
+    # Health Check
+    # ==================================================
 
     def health_check(self) -> bool:
         """
@@ -35,8 +53,11 @@ class QdrantClientManager:
         """
 
         try:
+
             self.client.get_collections()
+
             return True
 
         except Exception:
+
             return False

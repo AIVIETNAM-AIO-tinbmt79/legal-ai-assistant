@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+from config.settings import settings
+
 from chunking.base_chunker import BaseChunker
 from chunking.chunk_models import Chunk, ChunkMetadata
 from chunking.length_splitter import LengthSplitter
@@ -19,32 +21,97 @@ class FallbackChunker(BaseChunker):
 
     def __init__(
         self,
-        max_chars: int = 4000,
-        overlap: int = 300,
+        max_chars: int | None = None,
+        overlap: int | None = None,
     ):
-        self.max_chars = max_chars
-        self.overlap = overlap
 
-        self.length_splitter = LengthSplitter(
-            max_chars=max_chars,
-            overlap=overlap,
+        # ======================================
+        # Load from settings if not provided
+        # ======================================
+
+        self.max_chars = (
+            max_chars
+            if max_chars is not None
+            else settings.CHUNK_MAX_CHARS
         )
 
-    def chunk(self, text: str) -> list[Chunk]:
+        self.overlap = (
+            overlap
+            if overlap is not None
+            else settings.CHUNK_OVERLAP
+        )
+
+        # ======================================
+        # Validation
+        # ======================================
+
+        if self.max_chars <= 0:
+
+            raise ValueError(
+                "max_chars must be greater than 0."
+            )
+
+        if self.overlap < 0:
+
+            raise ValueError(
+                "overlap cannot be negative."
+            )
+
+        if self.overlap >= self.max_chars:
+
+            raise ValueError(
+                "overlap must be smaller than max_chars."
+            )
+
+        # ======================================
+        # Length Splitter
+        # ======================================
+
+        self.length_splitter = LengthSplitter(
+            max_chars=self.max_chars,
+            overlap=self.overlap,
+        )
+
+
+    # ==================================================
+    # Chunk
+    # ==================================================
+
+    def chunk(
+        self,
+        text: str,
+    ) -> list[Chunk]:
 
         if not text or not text.strip():
+
             return []
 
+
+        # ======================================
+        # Split paragraphs
+        # ======================================
+
         paragraphs = [
+
             paragraph.strip()
+
             for paragraph in text.split("\n\n")
+
             if paragraph.strip()
+
         ]
+
 
         chunks: list[Chunk] = []
 
         current_parts: list[str] = []
+
         current_length = 0
+
+
+        # ======================================
+        # Flush Chunk
+        # ======================================
 
         def flush_chunk():
 
@@ -52,76 +119,140 @@ class FallbackChunker(BaseChunker):
             nonlocal current_length
 
             if not current_parts:
+
                 return
+
 
             chunk_text = "\n\n".join(
                 current_parts
             ).strip()
 
+
+            if not chunk_text:
+
+                return
+
+
             chunks.append(
+
                 Chunk(
                     id=str(uuid4()),
+
                     text=chunk_text,
+
                     metadata=ChunkMetadata(
                         chunk_type="fallback",
                     ),
                 )
             )
 
+
             current_parts = []
+
             current_length = 0
+
+
+        # ======================================
+        # Process Paragraphs
+        # ======================================
 
         for paragraph in paragraphs:
 
-            paragraph_length = len(paragraph)
+            paragraph_length = len(
+                paragraph
+            )
 
-            # ======================================
-            # Paragraph itself is too large
-            # ======================================
+
+            # ----------------------------------
+            # Oversized paragraph
+            # ----------------------------------
 
             if paragraph_length > self.max_chars:
 
-                # Flush paragraphs accumulated before it.
+                # Save accumulated content first.
                 flush_chunk()
 
-                # Create temporary chunk.
+
                 temp_chunk = Chunk(
                     id=str(uuid4()),
+
                     text=paragraph,
+
                     metadata=ChunkMetadata(
                         chunk_type="fallback",
                     ),
                 )
 
-                # Split oversized paragraph.
-                split_chunks = self.length_splitter.split(
-                    temp_chunk
+
+                split_chunks = (
+                    self.length_splitter.split(
+                        temp_chunk
+                    )
                 )
 
-                chunks.extend(split_chunks)
+
+                chunks.extend(
+                    split_chunks
+                )
 
                 continue
 
-            # ======================================
-            # Current chunk would exceed max_chars
-            # ======================================
+
+            # ----------------------------------
+            # Check chunk size
+            # ----------------------------------
+
+            separator_length = (
+                2
+                if current_parts
+                else 0
+            )
+
+
+            new_length = (
+
+                current_length
+
+                + separator_length
+
+                + paragraph_length
+
+            )
+
 
             if (
                 current_parts
-                and current_length + paragraph_length
-                > self.max_chars
+                and new_length > self.max_chars
             ):
+
                 flush_chunk()
 
-            # ======================================
+
+            # ----------------------------------
             # Add paragraph
-            # ======================================
+            # ----------------------------------
 
-            current_parts.append(paragraph)
+            current_parts.append(
+                paragraph
+            )
 
-            current_length += paragraph_length
+            current_length += (
 
-        # Flush remaining paragraphs.
+                paragraph_length
+
+                + (
+                    2
+                    if len(current_parts) > 1
+                    else 0
+                )
+            )
+
+
+        # ======================================
+        # Flush Remaining Content
+        # ======================================
+
         flush_chunk()
+
 
         return chunks

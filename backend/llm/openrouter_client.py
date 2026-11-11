@@ -1,10 +1,6 @@
-import os
-
-from dotenv import load_dotenv
 from openai import OpenAI
 
-
-load_dotenv()
+from config.settings import settings
 
 
 class OpenRouterClient:
@@ -20,89 +16,124 @@ class OpenRouterClient:
         max_tokens: int | None = None,
     ):
 
+        # ==========================================
+        # API Key
+        # ==========================================
+
         self.api_key = (
             api_key
-            or os.getenv("OPENROUTER_API_KEY")
+            if api_key is not None
+            else settings.OPENROUTER_API_KEY
         )
 
         if not self.api_key:
+
             raise ValueError(
                 "OPENROUTER_API_KEY is not configured."
             )
 
-        self.base_url = os.getenv(
-            "OPENROUTER_BASE_URL",
-            "https://openrouter.ai/api/v1",
+
+        # ==========================================
+        # Base URL
+        # ==========================================
+
+        self.base_url = (
+            settings.OPENROUTER_BASE_URL
         )
+
+
+        # ==========================================
+        # Model
+        # ==========================================
 
         self.model = (
             model
-            or os.getenv(
-                "OPENROUTER_MODEL"
-            )
+            if model is not None
+            else settings.OPENROUTER_MODEL
         )
 
         if not self.model:
+
             raise ValueError(
                 "OPENROUTER_MODEL is not configured."
             )
 
+
+        # ==========================================
+        # Generation Config
+        # ==========================================
+
         self.temperature = (
             temperature
             if temperature is not None
-            else float(
-                os.getenv(
-                    "OPENROUTER_TEMPERATURE",
-                    "0.2",
-                )
-            )
+            else settings.OPENROUTER_TEMPERATURE
         )
 
         self.max_tokens = (
             max_tokens
             if max_tokens is not None
-            else int(
-                os.getenv(
-                    "OPENROUTER_MAX_TOKENS",
-                    "1000",
-                )
-            )
+            else settings.OPENROUTER_MAX_TOKENS
         )
+
+
+        # ==========================================
+        # OpenAI Client
+        # ==========================================
 
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
         )
 
+
+    # ==================================================
+    # Generate
+    # ==================================================
+
     def generate(
         self,
         prompt: str,
     ) -> str:
 
-        if not prompt.strip():
+        if not prompt or not prompt.strip():
+
             raise ValueError(
                 "Prompt cannot be empty."
             )
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
+
+        response = (
+            self.client
+            .chat
+            .completions
+            .create(
+                model=self.model,
+
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+
+                temperature=self.temperature,
+
+                max_tokens=self.max_tokens,
+            )
         )
 
+
         content = (
-            response.choices[0]
+            response
+            .choices[0]
             .message
             .content
         )
 
+
         if not content:
+
             return ""
+
 
         return content.strip()

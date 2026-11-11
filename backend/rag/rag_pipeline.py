@@ -1,6 +1,9 @@
 from retrieval.hybrid_retriever import HybridRetriever
+
 from rag.context_builder import ContextBuilder
 from rag.prompt_builder import PromptBuilder
+
+from memory.memory_manager import MemoryManager
 
 
 class RAGPipeline:
@@ -8,6 +11,10 @@ class RAGPipeline:
     Main RAG pipeline.
 
     Query
+      ↓
+    Save User Message
+      ↓
+    Load Conversation Memory
       ↓
     Hybrid Retrieval
       ↓
@@ -19,7 +26,9 @@ class RAGPipeline:
       ↓
     LLM
       ↓
-    Answer + Sources
+    Save Assistant Message
+      ↓
+    Answer
     """
 
     def __init__(
@@ -27,6 +36,7 @@ class RAGPipeline:
         retriever: HybridRetriever,
         reranker,
         llm,
+        memory_manager: MemoryManager,
         context_builder=None,
         prompt_builder=None,
         retrieval_top_k: int = 20,
@@ -40,6 +50,8 @@ class RAGPipeline:
         self.retriever = retriever
         self.reranker = reranker
         self.llm = llm
+
+        self.memory_manager = memory_manager
 
         self.context_builder = (
             context_builder
@@ -57,6 +69,34 @@ class RAGPipeline:
 
         self.retrieval_top_k = retrieval_top_k
         self.reranker_top_k = reranker_top_k
+
+    # ==================================================
+    # Create Conversation
+    # ==================================================
+
+    def create_conversation(
+        self,
+        user_id: str,
+        title: str = "New Conversation",
+    ):
+
+        return self.memory_manager.create_conversation(
+            user_id=user_id,
+            title=title,
+        )
+
+    # ==================================================
+    # Get Conversation
+    # ==================================================
+
+    def get_conversation(
+        self,
+        conversation_id: str,
+    ):
+
+        return self.memory_manager.get_conversation(
+            conversation_id
+        )
 
     # ==================================================
     # Retrieve
@@ -77,6 +117,7 @@ class RAGPipeline:
         """
 
         if not query or not query.strip():
+
             return []
 
         # --------------------------------------------------
@@ -89,6 +130,7 @@ class RAGPipeline:
         )
 
         if not hybrid_results:
+
             return []
 
         # --------------------------------------------------
@@ -110,11 +152,12 @@ class RAGPipeline:
     def build_prompt(
         self,
         query: str,
+        conversation_id: str | None = None,
     ) -> str:
-        """
-        Retrieve relevant chunks and build
-        the final LLM prompt.
-        """
+
+        # --------------------------------------------------
+        # Retrieve
+        # --------------------------------------------------
 
         results = self.retrieve(
             query
@@ -129,12 +172,28 @@ class RAGPipeline:
         )
 
         # --------------------------------------------------
+        # Load Conversation Memory
+        # --------------------------------------------------
+
+        memory = ""
+
+        if conversation_id:
+
+            memory = (
+                self.memory_manager
+                .get_memory_prompt(
+                    conversation_id
+                )
+            )
+
+        # --------------------------------------------------
         # Build Prompt
         # --------------------------------------------------
 
         return self.prompt_builder.build(
             query=query,
             context=context,
+            memory=memory,
         )
 
     # ==================================================
@@ -144,24 +203,11 @@ class RAGPipeline:
     def run(
         self,
         query: str,
+        conversation_id: str | None = None,
     ) -> dict:
-        """
-        Run the complete RAG pipeline.
-
-        Returns:
-
-            {
-                "query": ...,
-                "results": ...,
-                "context": ...,
-                "prompt": ...,
-                "answer": ...,
-                "sources": ...
-            }
-        """
 
         # ==================================================
-        # Empty query
+        # Validate Query
         # ==================================================
 
         if not query or not query.strip():
@@ -170,13 +216,26 @@ class RAGPipeline:
                 "query": query,
                 "results": [],
                 "context": "",
+                "memory": "",
                 "prompt": "",
                 "answer": "",
-                "sources": [],
             }
 
+        query = query.strip()
+
         # ==================================================
-        # 1. Retrieve
+        # 1. Save User Message
+        # ==================================================
+
+        if conversation_id:
+
+            self.memory_manager.add_user_message(
+                conversation_id=conversation_id,
+                content=query,
+            )
+
+        # ==================================================
+        # 2. Retrieve
         # ==================================================
 
         results = self.retrieve(
@@ -184,7 +243,7 @@ class RAGPipeline:
         )
 
         # ==================================================
-        # 2. Build Context
+        # 3. Build Context
         # ==================================================
 
         context = self.context_builder.build(
@@ -192,24 +251,32 @@ class RAGPipeline:
         )
 
         # ==================================================
-        # 3. Get Sources
+        # 4. Load Conversation Memory
         # ==================================================
 
-        sources = (
-            self.context_builder.get_sources()
-        )
+        memory = ""
+
+        if conversation_id:
+
+            memory = (
+                self.memory_manager
+                .get_memory_prompt(
+                    conversation_id
+                )
+            )
 
         # ==================================================
-        # 4. Build Prompt
+        # 5. Build Prompt
         # ==================================================
 
         prompt = self.prompt_builder.build(
             query=query,
             context=context,
+            memory=memory,
         )
 
         # ==================================================
-        # 5. LLM
+        # 6. LLM
         # ==================================================
 
         answer = self.llm.generate(
@@ -217,14 +284,25 @@ class RAGPipeline:
         )
 
         # ==================================================
-        # 6. Return
+        # 7. Save Assistant Message
+        # ==================================================
+
+        if conversation_id and answer:
+
+            self.memory_manager.add_assistant_message(
+                conversation_id=conversation_id,
+                content=answer,
+            )
+
+        # ==================================================
+        # 8. Return
         # ==================================================
 
         return {
             "query": query,
             "results": results,
             "context": context,
+            "memory": memory,
             "prompt": prompt,
             "answer": answer,
-            "sources": sources,
         }

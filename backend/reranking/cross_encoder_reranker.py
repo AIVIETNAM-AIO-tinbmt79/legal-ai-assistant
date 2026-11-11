@@ -1,65 +1,82 @@
-from typing import Optional
-
 from sentence_transformers import CrossEncoder
 
-from retrieval.retrieval_result import RetrievalResult
+from config.settings import settings
 
+from retrieval.retrieval_result import RetrievalResult
 from reranking.base_reranker import BaseReranker
 
 
 class CrossEncoderReranker(BaseReranker):
     """
     Cross-Encoder based reranker.
-
-    Flow:
-
-        Query
-          +
-        Hybrid candidates
-              ↓
-        Cross Encoder
-              ↓
-        Relevance scores
-              ↓
-        Sort
-              ↓
-        Top K
     """
 
     def __init__(
         self,
-        model_name: str = (
-            "cross-encoder/ms-marco-MiniLM-L-6-v2"
-        ),
-        max_length: int = 1024,
-        segment_tokens: int = 450,
-        segment_overlap: int = 50,
-        device: Optional[str] = None,
+        model_name: str | None = None,
+        max_length: int | None = None,
+        segment_tokens: int | None = None,
+        segment_overlap: int | None = None,
+        device: str | None = None,
     ):
 
-        self.model_name = model_name
+        # ==================================================
+        # Configuration
+        # ==================================================
 
-        self.max_length = max_length
+        self.model_name = (
+            model_name
+            if model_name is not None
+            else settings.RERANKER_MODEL
+        )
 
-        self.segment_tokens = segment_tokens
+        self.max_length = (
+            max_length
+            if max_length is not None
+            else settings.RERANKER_MAX_LENGTH
+        )
 
-        self.segment_overlap = segment_overlap
+        self.segment_tokens = (
+            segment_tokens
+            if segment_tokens is not None
+            else settings.RERANKER_SEGMENT_TOKENS
+        )
+
+        self.segment_overlap = (
+            segment_overlap
+            if segment_overlap is not None
+            else settings.RERANKER_SEGMENT_OVERLAP
+        )
+
+        self.device = (
+            device
+            if device is not None
+            else settings.RERANKER_DEVICE
+        )
 
         # ==================================================
         # Validate
         # ==================================================
 
-        if segment_tokens <= 0:
+        if self.max_length <= 0:
+            raise ValueError(
+                "max_length must be > 0"
+            )
+
+        if self.segment_tokens <= 0:
             raise ValueError(
                 "segment_tokens must be > 0"
             )
 
-        if segment_overlap < 0:
+        if self.segment_overlap < 0:
             raise ValueError(
                 "segment_overlap must be >= 0"
             )
 
-        if segment_overlap >= segment_tokens:
+        if (
+            self.segment_overlap
+            >= self.segment_tokens
+        ):
             raise ValueError(
                 "segment_overlap must be "
                 "smaller than segment_tokens"
@@ -70,14 +87,16 @@ class CrossEncoderReranker(BaseReranker):
         # ==================================================
 
         model_kwargs = {
-            "max_length": max_length,
+            "max_length": self.max_length,
         }
 
-        if device is not None:
-            model_kwargs["device"] = device
+        if self.device:
+            model_kwargs["device"] = (
+                self.device
+            )
 
         self.model = CrossEncoder(
-            model_name,
+            self.model_name,
             **model_kwargs,
         )
 
@@ -87,6 +106,7 @@ class CrossEncoderReranker(BaseReranker):
 
         self.tokenizer = self.model.tokenizer
 
+
     # ==================================================
     # Rerank
     # ==================================================
@@ -95,7 +115,7 @@ class CrossEncoderReranker(BaseReranker):
         self,
         query: str,
         results: list[RetrievalResult],
-        top_k: int = 5,
+        top_k: int | None = None,
     ) -> list[RetrievalResult]:
 
         if not query or not query.strip():
@@ -104,10 +124,26 @@ class CrossEncoderReranker(BaseReranker):
         if not results:
             return []
 
-        if top_k <= 0:
+        # ==============================================
+        # Top K
+        # ==============================================
+
+        final_k = (
+            top_k
+            if top_k is not None
+            else settings.RERANKER_TOP_K
+        )
+
+        if final_k <= 0:
             return []
 
-        reranked_results = []
+        # ==============================================
+        # Rerank
+        # ==============================================
+
+        reranked_results: list[
+            RetrievalResult
+        ] = []
 
         for result in results:
 
@@ -116,34 +152,25 @@ class CrossEncoderReranker(BaseReranker):
                 text=result.chunk.text,
             )
 
-            # --------------------------------------------------
-            # Create new RetrievalResult
-            # --------------------------------------------------
-
-            reranked_result = RetrievalResult(
-                chunk=result.chunk,
-                score=float(score),
-                source="reranker",
-            )
-
             reranked_results.append(
-                reranked_result
+                RetrievalResult(
+                    chunk=result.chunk,
+                    score=float(score),
+                    source="reranker",
+                )
             )
 
-        # ==================================================
+        # ==============================================
         # Sort
-        # ==================================================
+        # ==============================================
 
         reranked_results.sort(
             key=lambda result: result.score,
             reverse=True,
         )
 
-        # ==================================================
-        # Top K
-        # ==================================================
+        return reranked_results[:final_k]
 
-        return reranked_results[:top_k]
 
     # ==================================================
     # Score Chunk
@@ -158,20 +185,23 @@ class CrossEncoderReranker(BaseReranker):
         if not text or not text.strip():
             return float("-inf")
 
-        # --------------------------------------------------
-        # Tokenize chunk
-        # --------------------------------------------------
+        # ==============================================
+        # Tokenize
+        # ==============================================
 
         tokens = self.tokenizer.encode(
             text,
             add_special_tokens=False,
         )
 
-        # --------------------------------------------------
-        # Short chunk
-        # --------------------------------------------------
+        # ==============================================
+        # Short Chunk
+        # ==============================================
 
-        if len(tokens) <= self.segment_tokens:
+        if (
+            len(tokens)
+            <= self.segment_tokens
+        ):
 
             score = self.model.predict(
                 [(query, text)],
@@ -180,9 +210,9 @@ class CrossEncoderReranker(BaseReranker):
 
             return float(score[0])
 
-        # --------------------------------------------------
-        # Long chunk
-        # --------------------------------------------------
+        # ==============================================
+        # Long Chunk
+        # ==============================================
 
         segments = self._split_tokens(
             text
@@ -201,16 +231,13 @@ class CrossEncoderReranker(BaseReranker):
             show_progress_bar=False,
         )
 
-        # --------------------------------------------------
-        # Aggregate
-        # --------------------------------------------------
-
         return self._aggregate_scores(
             scores
         )
 
+
     # ==================================================
-    # Split long text
+    # Split Long Text
     # ==================================================
 
     def _split_tokens(
@@ -231,7 +258,7 @@ class CrossEncoderReranker(BaseReranker):
             - self.segment_overlap
         )
 
-        segments = []
+        segments: list[str] = []
 
         for start in range(
             0,
@@ -257,6 +284,7 @@ class CrossEncoderReranker(BaseReranker):
             )
 
             if segment.strip():
+
                 segments.append(
                     segment
                 )
@@ -266,8 +294,9 @@ class CrossEncoderReranker(BaseReranker):
 
         return segments
 
+
     # ==================================================
-    # Aggregate segment scores
+    # Aggregate Scores
     # ==================================================
 
     @staticmethod
@@ -281,10 +310,10 @@ class CrossEncoderReranker(BaseReranker):
         if len(scores) == 0:
             return float("-inf")
 
-        # --------------------------------------------------
-        # Use maximum segment relevance
-        # --------------------------------------------------
-
+        # Use maximum segment relevance.
         return float(
-            max(float(score) for score in scores)
+            max(
+                float(score)
+                for score in scores
+            )
         )

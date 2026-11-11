@@ -6,9 +6,10 @@ from qdrant_client.models import (
     VectorParams,
 )
 
+from config.settings import settings
+
 from chunking.chunk_models import Chunk
 from qdrant.qdrant_client import QdrantClientManager
-from qdrant.qdrant_config import QDRANT_COLLECTION
 
 
 class QdrantVectorStore:
@@ -22,26 +23,42 @@ class QdrantVectorStore:
         - Delete chunks
     """
 
-    def __init__(self, vector_size: int):
+    def __init__(
+        self,
+        vector_size: int,
+    ):
 
-        self.client_manager = QdrantClientManager()
-        self.client = self.client_manager.get_client()
+        self.client_manager = (
+            QdrantClientManager()
+        )
 
-        self.collection_name = QDRANT_COLLECTION
+        self.client = (
+            self.client_manager.get_client()
+        )
+
+        self.collection_name = (
+            settings.QDRANT_COLLECTION
+        )
+
         self.vector_size = vector_size
 
         self._ensure_collection()
+
 
     # ==================================================
     # Collection
     # ==================================================
 
-    def _ensure_collection(self) -> None:
+    def _ensure_collection(
+        self,
+    ) -> None:
         """
         Create collection if it does not exist.
         """
 
-        collections = self.client.get_collections()
+        collections = (
+            self.client.get_collections()
+        )
 
         exists = any(
             collection.name == self.collection_name
@@ -58,6 +75,7 @@ class QdrantVectorStore:
                 distance=Distance.COSINE,
             ),
         )
+
 
     # ==================================================
     # Add chunks
@@ -76,6 +94,7 @@ class QdrantVectorStore:
             return
 
         if len(chunks) != len(embeddings):
+
             raise ValueError(
                 "Number of chunks and embeddings "
                 "must be the same."
@@ -90,8 +109,10 @@ class QdrantVectorStore:
 
             payload = {
                 "text": chunk.text,
-                "metadata": self._metadata_to_dict(
-                    chunk.metadata
+                "metadata": (
+                    self._metadata_to_dict(
+                        chunk.metadata
+                    )
                 ),
             }
 
@@ -107,6 +128,7 @@ class QdrantVectorStore:
             collection_name=self.collection_name,
             points=points,
         )
+
 
     # ==================================================
     # Search
@@ -133,6 +155,7 @@ class QdrantVectorStore:
 
         return results.points
 
+
     # ==================================================
     # Delete
     # ==================================================
@@ -153,6 +176,7 @@ class QdrantVectorStore:
             points_selector=chunk_ids,
         )
 
+
     # ==================================================
     # Metadata
     # ==================================================
@@ -165,13 +189,25 @@ class QdrantVectorStore:
         Convert ChunkMetadata into a dictionary.
         """
 
-        if hasattr(metadata, "model_dump"):
+        if hasattr(
+            metadata,
+            "model_dump",
+        ):
+
             return metadata.model_dump()
 
-        if hasattr(metadata, "dict"):
+        if hasattr(
+            metadata,
+            "dict",
+        ):
+
             return metadata.dict()
 
-        if hasattr(metadata, "__dict__"):
+        if hasattr(
+            metadata,
+            "__dict__",
+        ):
+
             return metadata.__dict__
 
         return {}

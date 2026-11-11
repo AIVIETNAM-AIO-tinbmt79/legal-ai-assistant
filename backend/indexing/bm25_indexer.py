@@ -11,11 +11,14 @@ class BM25Indexer:
     """
     Persistent BM25 indexer.
 
-    Responsibilities:
-        - Tokenize chunk text
-        - Build BM25 index
-        - Save BM25 index to disk
-        - Load BM25 index from disk
+    The BM25 index is shared across all contracts.
+
+    Each chunk is associated with a contract_id through:
+
+        chunk.metadata.contract_id
+
+    When a contract is indexed again, its old chunks are
+    replaced instead of duplicating them.
     """
 
     def __init__(
@@ -67,11 +70,11 @@ class BM25Indexer:
                 "Cannot build BM25 index from empty chunks."
             )
 
-        self.chunks = chunks
+        self.chunks = list(chunks)
 
         self.tokenized_corpus = [
             self.tokenize(chunk.text)
-            for chunk in chunks
+            for chunk in self.chunks
         ]
 
         self.bm25 = BM25Okapi(
@@ -123,9 +126,74 @@ class BM25Indexer:
     ) -> None:
         """
         Build BM25 index and persist it.
+
+        This method is kept for compatibility with existing code.
         """
 
         self.build(chunks)
+
+        self.save()
+
+    # ==================================================
+    # Upsert Contract
+    # ==================================================
+
+    def upsert_contract(
+        self,
+        chunks: list[Chunk],
+        contract_id: str,
+    ) -> None:
+        """
+        Add or replace all chunks belonging to one contract.
+
+        Existing chunks with the same contract_id are removed.
+
+        Other contracts remain in the shared BM25 index.
+        """
+
+        if not contract_id:
+            raise ValueError(
+                "contract_id is required."
+            )
+
+        if not chunks:
+            raise ValueError(
+                "Cannot index empty contract chunks."
+            )
+
+        # ==============================================
+        # Load existing index if available
+        # ==============================================
+
+        if self.index_path.exists():
+            self.load()
+
+        # ==============================================
+        # Remove old chunks of this contract
+        # ==============================================
+
+        remaining_chunks = [
+            chunk
+            for chunk in self.chunks
+            if chunk.metadata.contract_id != contract_id
+        ]
+
+        # ==============================================
+        # Add new chunks
+        # ==============================================
+
+        combined_chunks = (
+            remaining_chunks
+            + list(chunks)
+        )
+
+        # ==============================================
+        # Rebuild shared BM25
+        # ==============================================
+
+        self.build(
+            combined_chunks
+        )
 
         self.save()
 
@@ -136,6 +204,10 @@ class BM25Indexer:
     def load(self) -> None:
         """
         Load persistent BM25 index.
+
+        Backward compatibility:
+        Older BM25 indexes may contain ChunkMetadata
+        objects created before contract_id was added.
         """
 
         if not self.index_path.exists():
@@ -152,6 +224,20 @@ class BM25Indexer:
             data = pickle.load(file)
 
         self.chunks = data["chunks"]
+
+        # ==============================================
+        # Backward compatibility
+        # ==============================================
+
+        for chunk in self.chunks:
+
+            metadata = chunk.metadata
+
+            if not hasattr(
+                metadata,
+                "contract_id",
+            ):
+                metadata.contract_id = None
 
         self.tokenized_corpus = (
             data["tokenized_corpus"]
