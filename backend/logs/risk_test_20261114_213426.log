@@ -1,0 +1,93 @@
+2026-11-14 21:34:31,658 | INFO | Đã cài instrumentation cho workflow, LLM và retrieval.
+2026-11-14 21:34:42,363 | INFO | Đang khởi tạo AIComponents...
+2026-11-14 21:35:00,287 | INFO | Shared reranker đã được đăng ký.
+2026-11-14 21:35:00,309 | INFO | Contract 13ddf486-2174-426c-b0dc-d54d10c46090: 16 chunks
+2026-11-14 21:35:00,312 | INFO | [NODE START] create_global_summary
+2026-11-14 21:35:00,312 | INFO | [NODE END] create_global_summary | 0.00 giây
+2026-11-14 21:35:00,312 | INFO | [NODE START] create_batches_node
+2026-11-14 21:35:00,319 | INFO | [NODE END] create_batches_node | 0.00 giây
+2026-11-14 21:35:00,320 | INFO | [NODE START] run_agent_1_node
+2026-11-14 21:35:00,320 | INFO | [LLM START] call=1
+2026-11-14 21:35:00,320 | INFO | [NODE START] run_agent_2_node
+2026-11-14 21:35:00,321 | INFO | [LLM START] call=1
+2026-11-14 21:35:10,307 | INFO | [LLM] call_llm | 9.99 giây | prompt=8603 chars | response=1667 chars
+2026-11-14 21:35:10,307 | INFO | [NODE END] run_agent_2_node | 9.99 giây
+2026-11-14 21:35:11,104 | INFO | [LLM] call_llm | 10.80 giây | prompt=8852 chars | response=1855 chars
+2026-11-14 21:35:11,104 | INFO | [NODE END] run_agent_1_node | 10.80 giây
+2026-11-14 21:35:11,120 | INFO | [NODE START] merge_candidates_node
+2026-11-14 21:35:11,120 | INFO | [NODE END] merge_candidates_node | 0.00 giây
+2026-11-14 21:35:11,120 | INFO | [NODE START] run_agent_3_node
+2026-11-14 21:35:14,410 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 3.29 giây
+2026-11-14 21:35:14,410 | INFO | [LLM START] call=3
+2026-11-14 21:35:19,287 | INFO | [LLM] call_llm | 4.88 giây | prompt=16146 chars | response=1041 chars
+2026-11-14 21:35:19,287 | INFO | [LEGAL SEARCH START] call=1 | query=phạm vi công việc hợp đồng tư vấn
+2026-11-14 21:35:24,036 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 3.68 giây | candidates=2 | top_k=5
+2026-11-14 21:35:24,038 | INFO | [LEGAL SEARCH] call=1 | 4.75 giây | references=2
+2026-11-14 21:35:24,038 | INFO | [LLM START] call=4
+2026-11-14 21:35:29,134 | INFO | [LLM] call_llm | 5.10 giây | prompt=18462 chars | response=1212 chars
+2026-11-14 21:35:29,134 | INFO | [LEGAL SEARCH START] call=2 | query=phạm vi công việc hợp đồng tư vấn
+2026-11-14 21:35:33,282 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 1.35 giây | candidates=2 | top_k=5
+2026-11-14 21:35:33,284 | INFO | [LEGAL SEARCH] call=2 | 4.15 giây | references=2
+2026-11-14 21:35:33,284 | INFO | [LLM START] call=5
+2026-11-14 21:35:38,585 | INFO | [LLM] call_llm | 5.30 giây | prompt=18545 chars | response=1161 chars
+2026-11-14 21:35:39,959 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 1.37 giây
+2026-11-14 21:35:39,959 | INFO | [LLM START] call=6
+2026-11-14 21:35:45,589 | INFO | [LLM] call_llm | 5.64 giây | prompt=16230 chars | response=1310 chars
+2026-11-14 21:35:45,589 | INFO | [LEGAL SEARCH START] call=3 | query=quy định về phạm vi công việc trong hợp đồng dịch vụ
+2026-11-14 21:35:57,759 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 9.56 giây | candidates=15 | top_k=5
+2026-11-14 21:35:57,760 | INFO | [LEGAL SEARCH] call=3 | 12.16 giây | references=5
+2026-11-14 21:35:57,760 | INFO | [LLM START] call=7
+2026-11-14 21:36:03,168 | INFO | [LLM] call_llm | 5.41 giây | prompt=19561 chars | response=1268 chars
+2026-11-14 21:36:03,168 | INFO | [LEGAL SEARCH START] call=4 | query=phạm vi công việc hợp đồng dịch vụ
+2026-11-14 21:36:14,758 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 9.76 giây | candidates=15 | top_k=5
+2026-11-14 21:36:14,760 | INFO | [LEGAL SEARCH] call=4 | 11.59 giây | references=5
+2026-11-14 21:36:14,760 | INFO | [LLM START] call=8
+2026-11-14 21:36:21,597 | INFO | [LLM] call_llm | 6.84 giây | prompt=19429 chars | response=1570 chars
+2026-11-14 21:36:24,183 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 2.58 giây
+2026-11-14 21:36:24,183 | INFO | [LLM START] call=9
+2026-11-14 21:36:29,425 | INFO | [LLM] call_llm | 5.24 giây | prompt=15982 chars | response=1064 chars
+2026-11-14 21:36:29,425 | INFO | [LEGAL SEARCH START] call=5 | query=phạm vi công việc hợp đồng dịch vụ
+2026-11-14 21:36:39,477 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 9.24 giây | candidates=15 | top_k=5
+2026-11-14 21:36:39,477 | INFO | [LEGAL SEARCH] call=5 | 10.05 giây | references=5
+2026-11-14 21:36:39,479 | INFO | [LLM START] call=10
+2026-11-14 21:36:44,835 | INFO | [LLM] call_llm | 5.36 giây | prompt=18996 chars | response=1194 chars
+2026-11-14 21:36:44,835 | INFO | [LEGAL SEARCH START] call=6 | query=giới hạn phạm vi công việc hợp đồng dịch vụ
+2026-11-14 21:36:56,581 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 9.28 giây | candidates=15 | top_k=5
+2026-11-14 21:36:56,582 | INFO | [LEGAL SEARCH] call=6 | 11.74 giây | references=5
+2026-11-14 21:36:56,582 | INFO | [LLM START] call=11
+2026-11-14 21:37:01,380 | INFO | [LLM] call_llm | 4.80 giây | prompt=18712 chars | response=1114 chars
+2026-11-14 21:37:03,322 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 1.94 giây
+2026-11-14 21:37:03,324 | INFO | [LLM START] call=12
+2026-11-14 21:37:08,548 | INFO | [LLM] call_llm | 5.22 giây | prompt=17142 chars | response=1050 chars
+2026-11-14 21:37:08,548 | INFO | [LEGAL SEARCH START] call=7 | query=quy định về phương thức thanh toán bằng tiền mặt
+2026-11-14 21:37:09,338 | INFO | [LEGAL SEARCH] call=7 | 0.80 giây | references=0
+2026-11-14 21:37:09,338 | INFO | [LLM START] call=13
+2026-11-14 21:37:13,701 | INFO | [LLM] call_llm | 4.37 giây | prompt=17405 chars | response=1032 chars
+2026-11-14 21:37:13,717 | INFO | [LEGAL SEARCH START] call=8 | query=quy định về phương thức thanh toán bằng tiền mặt
+2026-11-14 21:37:17,249 | INFO | [LEGAL SEARCH] call=8 | 3.54 giây | references=0
+2026-11-14 21:37:17,249 | INFO | [LLM START] call=14
+2026-11-14 21:37:21,826 | INFO | [LLM] call_llm | 4.58 giây | prompt=17469 chars | response=1032 chars
+2026-11-14 21:37:22,026 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 0.19 giây
+2026-11-14 21:37:22,026 | INFO | [LLM START] call=15
+2026-11-14 21:37:26,762 | INFO | [LLM] call_llm | 4.74 giây | prompt=7639 chars | response=1276 chars
+2026-11-14 21:37:26,762 | INFO | [LEGAL SEARCH START] call=9 | query=trách nhiệm bồi thường do nhãn hiệu bị từ chối đăng ký
+2026-11-14 21:37:27,819 | INFO | [LEGAL SEARCH] call=9 | 1.06 giây | references=0
+2026-11-14 21:37:27,821 | INFO | [LLM START] call=16
+2026-11-14 21:37:32,399 | INFO | [LLM] call_llm | 4.58 giây | prompt=8051 chars | response=1311 chars
+2026-11-14 21:37:32,399 | INFO | [LEGAL SEARCH START] call=10 | query=trách nhiệm bồi thường do nhãn hiệu bị từ chối đăng ký
+2026-11-14 21:37:39,445 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 6.37 giây | candidates=15 | top_k=5
+2026-11-14 21:37:39,446 | INFO | [LEGAL SEARCH] call=10 | 7.05 giây | references=5
+2026-11-14 21:37:39,446 | INFO | [LLM START] call=17
+2026-11-14 21:37:43,774 | INFO | [LLM] call_llm | 4.33 giây | prompt=10807 chars | response=1354 chars
+2026-11-14 21:37:46,423 | INFO | [SCHEMA_CONTEXT] modes.risk_assessment.agent.get_graph_schema_context | 2.65 giây
+2026-11-14 21:37:46,423 | INFO | [LLM START] call=18
+2026-11-14 21:37:51,633 | INFO | [LLM] call_llm | 5.21 giây | prompt=16430 chars | response=1141 chars
+2026-11-14 21:37:51,633 | INFO | [LEGAL SEARCH START] call=11 | query=điều kiện thanh toán hợp đồng dịch vụ đăng ký nhãn hiệu
+2026-11-14 21:37:59,467 | INFO | [SEMANTIC_RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 6.94 giây | candidates=15 | top_k=5
+2026-11-14 21:37:59,467 | INFO | [LEGAL SEARCH] call=11 | 7.83 giây | references=5
+2026-11-14 21:37:59,467 | INFO | [LLM START] call=19
+2026-11-14 21:38:04,829 | INFO | [LLM] call_llm | 5.36 giây | prompt=18872 chars | response=1307 chars
+2026-11-14 21:38:04,831 | INFO | [NODE END] run_agent_3_node | 173.71 giây
+2026-11-14 21:38:04,831 | INFO | [NODE START] build_final_assessment_node
+2026-11-14 21:38:04,831 | INFO | [NODE END] build_final_assessment_node | 0.00 giây
+2026-11-14 21:38:04,833 | INFO | Risk assessment hoàn thành thành công.

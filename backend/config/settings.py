@@ -83,6 +83,11 @@ class Settings:
         )
     )
 
+    LEGAL_RERANK_CANDIDATES = int(os.getenv(
+                "LEGAL_RERANK_CANDIDATES",
+                15,
+            ))
+
     SEMANTIC_WEIGHT = float(
         os.getenv(
             "SEMANTIC_WEIGHT",

@@ -1,0 +1,274 @@
+2026-11-14 22:42:42,848 | INFO | Đã import AIComponents từ app.core.ai_components
+2026-11-14 22:42:42,849 | INFO | Đã import RiskService từ modes.risk_assessment.service
+2026-11-14 22:42:42,850 | INFO | [INSTRUMENT] Đã bọc modes.risk_assessment.legal_tools._get_superseded_document_ids
+2026-11-14 22:42:42,850 | INFO | [INSTRUMENT] Đã bọc modes.risk_assessment.legal_tools._lexical_chunk_candidates
+2026-11-14 22:42:42,850 | INFO | [INSTRUMENT] Đã bọc modes.risk_assessment.legal_tools._search_entities_with_driver
+2026-11-14 22:42:42,850 | INFO | [INSTRUMENT] Đã bọc modes.risk_assessment.legal_tools._search_relationships_with_driver
+2026-11-14 22:42:42,850 | INFO | [INSTRUMENT] Đã bọc modes.risk_assessment.legal_tools._get_cached_graph_schema
+2026-11-14 22:42:42,852 | INFO | [SKIP STAGE] Không có modes.risk_assessment.legal_tools._load_chunks
+2026-11-14 22:42:42,852 | INFO | [SKIP STAGE] Không có modes.risk_assessment.legal_tools._load_chunks_jsonl
+2026-11-14 22:42:42,852 | INFO | [SKIP STAGE] Không có modes.risk_assessment.legal_tools._rank_and_dedupe_references
+2026-11-14 22:42:42,852 | INFO | [SKIP STAGE] Không có modes.risk_assessment.legal_tools._dedupe_references
+2026-11-14 22:42:42,852 | INFO | Đã cài instrumentation cho workflow, LLM, legal_search và các hàm nội bộ.
+2026-11-14 22:42:42,852 | INFO | Đang khởi tạo AIComponents...
+2026-11-14 22:43:03,346 | INFO | Shared reranker đã được đăng ký.
+2026-11-14 22:43:03,397 | INFO | [NODE START] create_global_summary
+2026-11-14 22:43:03,397 | INFO | [NODE END] create_global_summary | 0.00 giây
+2026-11-14 22:43:03,397 | INFO | [NODE START] create_batches_node
+2026-11-14 22:43:03,397 | INFO | [NODE END] create_batches_node | 0.00 giây
+2026-11-14 22:43:03,397 | INFO | [NODE START] run_agent_1_node
+2026-11-14 22:43:03,397 | INFO | [LLM START] call=1
+2026-11-14 22:43:03,397 | INFO | [NODE START] run_agent_2_node
+2026-11-14 22:43:03,414 | INFO | [LLM START] call=1
+2026-11-14 22:43:12,252 | INFO | [LLM] call_llm | 8.84 giây | prompt=986 chars | response=1645 chars
+2026-11-14 22:43:12,253 | INFO | [NODE END] run_agent_2_node | 8.84 giây
+2026-11-14 22:43:14,305 | INFO | [LLM] call_llm | 10.90 giây | prompt=1235 chars | response=2082 chars
+2026-11-14 22:43:14,306 | INFO | [NODE END] run_agent_1_node | 10.90 giây
+2026-11-14 22:43:14,308 | INFO | [NODE START] merge_candidates_node
+2026-11-14 22:43:14,309 | INFO | [NODE END] merge_candidates_node | 0.00 giây
+2026-11-14 22:43:14,311 | INFO | [NODE START] run_agent_3_node
+2026-11-14 22:43:16,946 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 2.644 giây
+2026-11-14 22:43:18,448 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.488 giây
+2026-11-14 22:43:18,448 | INFO | [SCHEMA CONTEXT] 4.13 giây
+2026-11-14 22:43:18,450 | INFO | [LLM START] call=3
+2026-11-14 22:43:23,683 | INFO | [LLM] call_llm | 5.23 giây | prompt=2932 chars | response=1155 chars
+2026-11-14 22:43:23,683 | INFO | [LEGAL SEARCH START] call=1 | query=scope creep hợp đồng
+2026-11-14 22:43:23,685 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:43:24,115 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.440 giây
+2026-11-14 22:43:24,247 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.128 giây
+2026-11-14 22:43:24,302 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.047 giây
+2026-11-14 22:43:31,510 | INFO | [SEMANTIC RERANK] 6.96 giây | candidates=15 | top_k=5
+2026-11-14 22:43:31,510 | INFO | [LEGAL SEARCH] call=1 | 7.83 giây | references=5
+2026-11-14 22:43:31,512 | INFO | [LLM START] call=4
+2026-11-14 22:43:36,924 | INFO | [LLM] call_llm | 5.42 giây | prompt=2932 chars | response=1241 chars
+2026-11-14 22:43:36,924 | INFO | [LEGAL SEARCH START] call=2 | query=scope creep hợp đồng dịch vụ
+2026-11-14 22:43:36,924 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:43:38,490 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.559 giây
+2026-11-14 22:43:38,637 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.146 giây
+2026-11-14 22:43:38,679 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.041 giây
+2026-11-14 22:43:46,051 | INFO | [SEMANTIC RERANK] 7.35 giây | candidates=15 | top_k=5
+2026-11-14 22:43:46,053 | INFO | [LEGAL SEARCH] call=2 | 9.12 giây | references=5
+2026-11-14 22:43:46,053 | INFO | [LLM START] call=5
+2026-11-14 22:43:50,898 | INFO | [LLM] call_llm | 4.85 giây | prompt=2932 chars | response=1041 chars
+2026-11-14 22:43:50,898 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:43:54,699 | INFO | [LEGAL STAGE] _search_entities_with_driver | 3.795 giây
+2026-11-14 22:43:54,700 | INFO | [SCHEMA CONTEXT] 3.80 giây
+2026-11-14 22:43:54,700 | INFO | [LLM START] call=6
+2026-11-14 22:43:59,476 | INFO | [LLM] call_llm | 4.79 giây | prompt=2932 chars | response=1082 chars
+2026-11-14 22:43:59,476 | INFO | [LEGAL SEARCH START] call=3 | query=giới hạn phạm vi công việc hợp đồng dịch vụ
+2026-11-14 22:43:59,476 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:43:59,761 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.287 giây
+2026-11-14 22:43:59,914 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.147 giây
+2026-11-14 22:43:59,964 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.040 giây
+2026-11-14 22:44:07,587 | INFO | [SEMANTIC RERANK] 7.60 giây | candidates=15 | top_k=5
+2026-11-14 22:44:07,589 | INFO | [LEGAL SEARCH] call=3 | 8.10 giây | references=5
+2026-11-14 22:44:07,591 | INFO | [LLM START] call=7
+2026-11-14 22:44:13,467 | INFO | [LLM] call_llm | 5.88 giây | prompt=2932 chars | response=1360 chars
+2026-11-14 22:44:13,467 | INFO | [LEGAL SEARCH START] call=4 | query=giới hạn phạm vi công việc trong hợp đồng dịch vụ
+2026-11-14 22:44:13,467 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:14,839 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.373 giây
+2026-11-14 22:44:15,218 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.387 giây
+2026-11-14 22:44:15,234 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.390 giây
+2026-11-14 22:44:15,267 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.041 giây
+2026-11-14 22:44:15,267 | INFO | [LEGAL SEARCH] call=4 | 1.81 giây | references=0
+2026-11-14 22:44:15,267 | INFO | [LLM START] call=8
+2026-11-14 22:44:20,694 | INFO | [LLM] call_llm | 5.42 giây | prompt=2932 chars | response=1235 chars
+2026-11-14 22:44:20,694 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:22,197 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.494 giây
+2026-11-14 22:44:22,198 | INFO | [SCHEMA CONTEXT] 1.50 giây
+2026-11-14 22:44:22,199 | INFO | [LLM START] call=9
+2026-11-14 22:44:27,610 | INFO | [LLM] call_llm | 5.42 giây | prompt=2932 chars | response=1223 chars
+2026-11-14 22:44:27,610 | INFO | [LEGAL SEARCH START] call=5 | query=scope creep hợp đồng dịch vụ
+2026-11-14 22:44:27,610 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:30,508 | INFO | [LEGAL STAGE] _search_entities_with_driver | 2.890 giây
+2026-11-14 22:44:30,630 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.133 giây
+2026-11-14 22:44:30,682 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.039 giây
+2026-11-14 22:44:31,651 | INFO | [SEMANTIC RERANK] 0.80 giây | candidates=2 | top_k=5
+2026-11-14 22:44:31,653 | INFO | [LEGAL SEARCH] call=5 | 4.04 giây | references=2
+2026-11-14 22:44:31,653 | INFO | [LLM START] call=10
+2026-11-14 22:44:36,176 | INFO | [LLM] call_llm | 4.52 giây | prompt=2932 chars | response=1149 chars
+2026-11-14 22:44:36,178 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:38,070 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.890 giây
+2026-11-14 22:44:38,070 | INFO | [SCHEMA CONTEXT] 1.89 giây
+2026-11-14 22:44:38,072 | INFO | [LLM START] call=11
+2026-11-14 22:44:42,734 | INFO | [LLM] call_llm | 4.67 giây | prompt=2932 chars | response=1094 chars
+2026-11-14 22:44:42,734 | INFO | [LEGAL SEARCH START] call=6 | query=quy định về phương thức thanh toán bằng tiền mặt
+2026-11-14 22:44:42,734 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:44,063 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.327 giây
+2026-11-14 22:44:44,164 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.098 giây
+2026-11-14 22:44:44,201 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.038 giây
+2026-11-14 22:44:46,002 | INFO | [SEMANTIC RERANK] 1.79 giây | candidates=5 | top_k=5
+2026-11-14 22:44:46,004 | INFO | [LEGAL SEARCH] call=6 | 3.26 giây | references=5
+2026-11-14 22:44:46,004 | INFO | [LLM START] call=12
+2026-11-14 22:44:50,667 | INFO | [LLM] call_llm | 4.67 giây | prompt=2932 chars | response=1161 chars
+2026-11-14 22:44:50,667 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:50,942 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.276 giây
+2026-11-14 22:44:50,942 | INFO | [SCHEMA CONTEXT] 0.28 giây
+2026-11-14 22:44:50,942 | INFO | [LLM START] call=13
+2026-11-14 22:44:56,481 | INFO | [LLM] call_llm | 5.54 giây | prompt=2932 chars | response=1296 chars
+2026-11-14 22:44:56,481 | INFO | [LEGAL SEARCH START] call=7 | query=trách nhiệm bồi thường do nhãn hiệu bị từ chối đăng ký
+2026-11-14 22:44:56,481 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:44:56,792 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.311 giây
+2026-11-14 22:44:56,995 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.201 giây
+2026-11-14 22:44:56,995 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.201 giây
+2026-11-14 22:44:57,048 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.040 giây
+2026-11-14 22:44:57,051 | INFO | [LEGAL SEARCH] call=7 | 0.56 giây | references=0
+2026-11-14 22:44:57,051 | INFO | [LLM START] call=14
+2026-11-14 22:45:03,094 | INFO | [LLM] call_llm | 6.04 giây | prompt=2932 chars | response=1347 chars
+2026-11-14 22:45:03,105 | INFO | [LEGAL SEARCH START] call=8 | query=trách nhiệm bồi thường thiệt hại do nhãn hiệu bị từ chối đăng ký
+2026-11-14 22:45:03,105 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:03,407 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.305 giây
+2026-11-14 22:45:03,509 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.100 giây
+2026-11-14 22:45:03,549 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.036 giây
+2026-11-14 22:45:12,298 | INFO | [SEMANTIC RERANK] 8.74 giây | candidates=15 | top_k=5
+2026-11-14 22:45:12,301 | INFO | [LEGAL SEARCH] call=8 | 9.20 giây | references=5
+2026-11-14 22:45:12,301 | INFO | [LLM START] call=15
+2026-11-14 22:45:18,149 | INFO | [LLM] call_llm | 5.85 giây | prompt=2932 chars | response=1283 chars
+2026-11-14 22:45:18,150 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:21,830 | INFO | [LEGAL STAGE] _search_entities_with_driver | 3.693 giây
+2026-11-14 22:45:21,830 | INFO | [SCHEMA CONTEXT] 3.69 giây
+2026-11-14 22:45:21,846 | INFO | [LLM START] call=16
+2026-11-14 22:45:26,692 | INFO | [LLM] call_llm | 4.85 giây | prompt=2932 chars | response=1099 chars
+2026-11-14 22:45:26,692 | INFO | [LEGAL SEARCH START] call=9 | query=quy định về phương thức thanh toán bằng tiền mặt
+2026-11-14 22:45:26,692 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:26,901 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.204 giây
+2026-11-14 22:45:27,033 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.131 giây
+2026-11-14 22:45:27,076 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.043 giây
+2026-11-14 22:45:28,101 | INFO | [SEMANTIC RERANK] 1.00 giây | candidates=5 | top_k=5
+2026-11-14 22:45:28,101 | INFO | [LEGAL SEARCH] call=9 | 1.41 giây | references=5
+2026-11-14 22:45:28,101 | INFO | [LLM START] call=17
+2026-11-14 22:45:33,017 | INFO | [LLM] call_llm | 4.91 giây | prompt=2932 chars | response=1181 chars
+2026-11-14 22:45:33,017 | INFO | [LEGAL SEARCH START] call=10 | query=phương thức thanh toán bằng tiền mặt
+2026-11-14 22:45:33,018 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:35,066 | INFO | [LEGAL STAGE] _search_entities_with_driver | 2.048 giây
+2026-11-14 22:45:35,187 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.122 giây
+2026-11-14 22:45:35,224 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.036 giây
+2026-11-14 22:45:36,267 | INFO | [SEMANTIC RERANK] 1.01 giây | candidates=5 | top_k=5
+2026-11-14 22:45:36,267 | INFO | [LEGAL SEARCH] call=10 | 3.25 giây | references=5
+2026-11-14 22:45:36,269 | INFO | [LLM START] call=18
+2026-11-14 22:45:41,763 | INFO | [LLM] call_llm | 5.49 giây | prompt=2932 chars | response=1380 chars
+2026-11-14 22:45:41,765 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:43,625 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.859 giây
+2026-11-14 22:45:43,625 | INFO | [SCHEMA CONTEXT] 1.86 giây
+2026-11-14 22:45:43,625 | INFO | [LLM START] call=19
+2026-11-14 22:45:49,329 | INFO | [LLM] call_llm | 5.70 giây | prompt=2932 chars | response=1269 chars
+2026-11-14 22:45:49,330 | INFO | [LEGAL SEARCH START] call=11 | query=thời hạn cấp giấy chứng nhận đăng ký nhãn hiệu
+2026-11-14 22:45:49,330 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:50,783 | INFO | [LEGAL STAGE] _search_entities_with_driver | 1.466 giây
+2026-11-14 22:45:50,982 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.186 giây
+2026-11-14 22:45:50,982 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.187 giây
+2026-11-14 22:45:51,018 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.036 giây
+2026-11-14 22:45:51,018 | INFO | [LEGAL SEARCH] call=11 | 1.69 giây | references=0
+2026-11-14 22:45:51,018 | INFO | [LLM START] call=20
+2026-11-14 22:45:56,408 | INFO | [LLM] call_llm | 5.39 giây | prompt=2932 chars | response=1285 chars
+2026-11-14 22:45:56,409 | INFO | [LEGAL SEARCH START] call=12 | query=thời hạn cấp giấy chứng nhận đăng ký nhãn hiệu
+2026-11-14 22:45:56,409 | INFO | [LEGAL STAGE] _get_cached_graph_schema | 0.000 giây
+2026-11-14 22:45:56,673 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.263 giây
+2026-11-14 22:45:56,871 | INFO | [LEGAL STAGE] _search_entities_with_driver | 0.197 giây
+2026-11-14 22:45:56,872 | INFO | [LEGAL STAGE] _search_relationships_with_driver | 0.198 giây
+2026-11-14 22:45:56,910 | INFO | [LEGAL STAGE] _get_superseded_document_ids | 0.037 giây
+2026-11-14 22:45:56,910 | INFO | [LEGAL SEARCH] call=12 | 0.50 giây | references=0
+2026-11-14 22:45:56,911 | INFO | [LLM START] call=21
+2026-11-14 22:46:02,243 | INFO | [LLM] call_llm | 5.33 giây | prompt=2932 chars | response=1137 chars
+2026-11-14 22:46:02,245 | INFO | [NODE END] run_agent_3_node | 167.93 giây
+2026-11-14 22:46:02,248 | INFO | [NODE START] build_final_assessment_node
+2026-11-14 22:46:02,249 | INFO | [NODE END] build_final_assessment_node | 0.00 giây
+2026-11-14 22:46:02,252 | INFO | Risk assessment hoàn thành | 178.88 giây | result_type=FinalRiskAssessment
+2026-11-14 22:46:02,255 | INFO | ======================================================================
+2026-11-14 22:46:02,256 | INFO | BENCHMARK SUMMARY
+2026-11-14 22:46:02,257 | INFO | ======================================================================
+2026-11-14 22:46:02,257 | INFO | Workflow: 178.88s | status=success
+2026-11-14 22:46:02,258 | INFO | Node create_global_summary: 0.00s | calls=1 | errors=0
+2026-11-14 22:46:02,259 | INFO | Node create_batches_node: 0.00s | calls=1 | errors=0
+2026-11-14 22:46:02,259 | INFO | Node run_agent_1_node: 10.90s | calls=1 | errors=0
+2026-11-14 22:46:02,260 | INFO | Node run_agent_2_node: 8.84s | calls=1 | errors=0
+2026-11-14 22:46:02,260 | INFO | Node merge_candidates_node: 0.00s | calls=1 | errors=0
+2026-11-14 22:46:02,261 | INFO | Node run_agent_3_node: 167.93s | calls=1 | errors=0
+2026-11-14 22:46:02,261 | INFO | Node build_final_assessment_node: 0.00s | calls=1 | errors=0
+2026-11-14 22:46:02,262 | INFO | llm: calls=21 | total=119.70s | errors=0
+2026-11-14 22:46:02,263 | INFO | legal_search: calls=12 | total=50.77s | errors=0
+2026-11-14 22:46:02,263 | INFO | schema_context: calls=7 | total=17.15s | errors=0
+2026-11-14 22:46:02,264 | INFO | Semantic rerank: calls=8 | total=35.25s | errors=0
+2026-11-14 22:46:02,265 | INFO |   Rerank #1: 6.96s | candidates=15 | top_k=5
+2026-11-14 22:46:02,265 | INFO |   Rerank #2: 7.35s | candidates=15 | top_k=5
+2026-11-14 22:46:02,266 | INFO |   Rerank #3: 7.60s | candidates=15 | top_k=5
+2026-11-14 22:46:02,266 | INFO |   Rerank #4: 0.80s | candidates=2 | top_k=5
+2026-11-14 22:46:02,270 | INFO |   Rerank #5: 1.79s | candidates=5 | top_k=5
+2026-11-14 22:46:02,271 | INFO |   Rerank #6: 8.74s | candidates=15 | top_k=5
+2026-11-14 22:46:02,272 | INFO |   Rerank #7: 1.00s | candidates=5 | top_k=5
+2026-11-14 22:46:02,272 | INFO |   Rerank #8: 1.01s | candidates=5 | top_k=5
+2026-11-14 22:46:02,272 | INFO | ----------------------------------------------------------------------
+2026-11-14 22:46:02,273 | INFO | LEGAL SEARCH INTERNAL STAGES
+2026-11-14 22:46:02,273 | INFO | _search_entities_with_driver: calls=23 | total=27.939s | average=1.215s | errors=0
+2026-11-14 22:46:02,273 | INFO |   _search_entities_with_driver #1: 1.488s | status=success
+2026-11-14 22:46:02,274 | INFO |   _search_entities_with_driver #2: 0.440s | status=success
+2026-11-14 22:46:02,274 | INFO |   _search_entities_with_driver #3: 1.559s | status=success
+2026-11-14 22:46:02,274 | INFO |   _search_entities_with_driver #4: 3.795s | status=success
+2026-11-14 22:46:02,275 | INFO |   _search_entities_with_driver #5: 0.287s | status=success
+2026-11-14 22:46:02,275 | INFO |   _search_entities_with_driver #6: 1.373s | status=success
+2026-11-14 22:46:02,277 | INFO |   _search_entities_with_driver #7: 0.387s | status=success
+2026-11-14 22:46:02,277 | INFO |   _search_entities_with_driver #8: 1.494s | status=success
+2026-11-14 22:46:02,277 | INFO |   _search_entities_with_driver #9: 2.890s | status=success
+2026-11-14 22:46:02,278 | INFO |   _search_entities_with_driver #10: 1.890s | status=success
+2026-11-14 22:46:02,279 | INFO |   _search_entities_with_driver #11: 1.327s | status=success
+2026-11-14 22:46:02,280 | INFO |   _search_entities_with_driver #12: 0.276s | status=success
+2026-11-14 22:46:02,281 | INFO |   _search_entities_with_driver #13: 0.311s | status=success
+2026-11-14 22:46:02,281 | INFO |   _search_entities_with_driver #14: 0.201s | status=success
+2026-11-14 22:46:02,282 | INFO |   _search_entities_with_driver #15: 0.305s | status=success
+2026-11-14 22:46:02,288 | INFO |   _search_entities_with_driver #16: 3.693s | status=success
+2026-11-14 22:46:02,292 | INFO |   _search_entities_with_driver #17: 0.204s | status=success
+2026-11-14 22:46:02,292 | INFO |   _search_entities_with_driver #18: 2.048s | status=success
+2026-11-14 22:46:02,293 | INFO |   _search_entities_with_driver #19: 1.859s | status=success
+2026-11-14 22:46:02,294 | INFO |   _search_entities_with_driver #20: 1.466s | status=success
+2026-11-14 22:46:02,295 | INFO |   _search_entities_with_driver #21: 0.186s | status=success
+2026-11-14 22:46:02,295 | INFO |   _search_entities_with_driver #22: 0.263s | status=success
+2026-11-14 22:46:02,296 | INFO |   _search_entities_with_driver #23: 0.197s | status=success
+2026-11-14 22:46:02,297 | INFO | _get_cached_graph_schema: calls=19 | total=2.644s | average=0.139s | errors=0
+2026-11-14 22:46:02,298 | INFO |   _get_cached_graph_schema #1: 2.644s | status=success
+2026-11-14 22:46:02,298 | INFO |   _get_cached_graph_schema #2: 0.000s | status=success
+2026-11-14 22:46:02,303 | INFO |   _get_cached_graph_schema #3: 0.000s | status=success
+2026-11-14 22:46:02,304 | INFO |   _get_cached_graph_schema #4: 0.000s | status=success
+2026-11-14 22:46:02,305 | INFO |   _get_cached_graph_schema #5: 0.000s | status=success
+2026-11-14 22:46:02,306 | INFO |   _get_cached_graph_schema #6: 0.000s | status=success
+2026-11-14 22:46:02,306 | INFO |   _get_cached_graph_schema #7: 0.000s | status=success
+2026-11-14 22:46:02,308 | INFO |   _get_cached_graph_schema #8: 0.000s | status=success
+2026-11-14 22:46:02,308 | INFO |   _get_cached_graph_schema #9: 0.000s | status=success
+2026-11-14 22:46:02,309 | INFO |   _get_cached_graph_schema #10: 0.000s | status=success
+2026-11-14 22:46:02,309 | INFO |   _get_cached_graph_schema #11: 0.000s | status=success
+2026-11-14 22:46:02,310 | INFO |   _get_cached_graph_schema #12: 0.000s | status=success
+2026-11-14 22:46:02,311 | INFO |   _get_cached_graph_schema #13: 0.000s | status=success
+2026-11-14 22:46:02,312 | INFO |   _get_cached_graph_schema #14: 0.000s | status=success
+2026-11-14 22:46:02,312 | INFO |   _get_cached_graph_schema #15: 0.000s | status=success
+2026-11-14 22:46:02,312 | INFO |   _get_cached_graph_schema #16: 0.000s | status=success
+2026-11-14 22:46:02,312 | INFO |   _get_cached_graph_schema #17: 0.000s | status=success
+2026-11-14 22:46:02,314 | INFO |   _get_cached_graph_schema #18: 0.000s | status=success
+2026-11-14 22:46:02,314 | INFO |   _get_cached_graph_schema #19: 0.000s | status=success
+2026-11-14 22:46:02,316 | INFO | _search_relationships_with_driver: calls=12 | total=1.980s | average=0.165s | errors=0
+2026-11-14 22:46:02,321 | INFO |   _search_relationships_with_driver #1: 0.128s | status=success
+2026-11-14 22:46:02,323 | INFO |   _search_relationships_with_driver #2: 0.146s | status=success
+2026-11-14 22:46:02,323 | INFO |   _search_relationships_with_driver #3: 0.147s | status=success
+2026-11-14 22:46:02,324 | INFO |   _search_relationships_with_driver #4: 0.390s | status=success
+2026-11-14 22:46:02,324 | INFO |   _search_relationships_with_driver #5: 0.133s | status=success
+2026-11-14 22:46:02,325 | INFO |   _search_relationships_with_driver #6: 0.098s | status=success
+2026-11-14 22:46:02,325 | INFO |   _search_relationships_with_driver #7: 0.201s | status=success
+2026-11-14 22:46:02,325 | INFO |   _search_relationships_with_driver #8: 0.100s | status=success
+2026-11-14 22:46:02,325 | INFO |   _search_relationships_with_driver #9: 0.131s | status=success
+2026-11-14 22:46:02,325 | INFO |   _search_relationships_with_driver #10: 0.122s | status=success
+2026-11-14 22:46:02,326 | INFO |   _search_relationships_with_driver #11: 0.187s | status=success
+2026-11-14 22:46:02,326 | INFO |   _search_relationships_with_driver #12: 0.198s | status=success
+2026-11-14 22:46:02,326 | INFO | _get_superseded_document_ids: calls=12 | total=0.474s | average=0.039s | errors=0
+2026-11-14 22:46:02,326 | INFO |   _get_superseded_document_ids #1: 0.047s | status=success
+2026-11-14 22:46:02,328 | INFO |   _get_superseded_document_ids #2: 0.041s | status=success
+2026-11-14 22:46:02,329 | INFO |   _get_superseded_document_ids #3: 0.040s | status=success
+2026-11-14 22:46:02,332 | INFO |   _get_superseded_document_ids #4: 0.041s | status=success
+2026-11-14 22:46:02,338 | INFO |   _get_superseded_document_ids #5: 0.039s | status=success
+2026-11-14 22:46:02,341 | INFO |   _get_superseded_document_ids #6: 0.038s | status=success
+2026-11-14 22:46:02,341 | INFO |   _get_superseded_document_ids #7: 0.040s | status=success
+2026-11-14 22:46:02,342 | INFO |   _get_superseded_document_ids #8: 0.036s | status=success
+2026-11-14 22:46:02,342 | INFO |   _get_superseded_document_ids #9: 0.043s | status=success
+2026-11-14 22:46:02,342 | INFO |   _get_superseded_document_ids #10: 0.036s | status=success
+2026-11-14 22:46:02,342 | INFO |   _get_superseded_document_ids #11: 0.036s | status=success
+2026-11-14 22:46:02,342 | INFO |   _get_superseded_document_ids #12: 0.037s | status=success
+2026-11-14 22:46:02,342 | INFO | ======================================================================
+2026-11-14 22:46:02,347 | INFO | Log được lưu tại: logs\risk_test_20261114_224230.log
+2026-11-14 22:46:02,347 | INFO | JSON được lưu tại: logs\risk_test_20261114_224230.json

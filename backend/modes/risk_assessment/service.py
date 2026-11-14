@@ -8,18 +8,15 @@ from .workflow import build_risk_assessment_graph
 
 
 class RiskService:
-    def __init__(
-        self,
-        bm25_indexer=None,
-    ):
+    def __init__(self, bm25_indexer=None):
         self.bm25_indexer = (
-            bm25_indexer
-            or BM25Indexer()
+            bm25_indexer or BM25Indexer()
         )
 
-        self.graph = (
-            build_risk_assessment_graph()
-        )
+        self.graph = build_risk_assessment_graph()
+
+        # Ghi nhớ thời điểm index được đọc.
+        self._index_mtime_ns = None
 
     def get_contract_chunks(
         self,
@@ -30,13 +27,31 @@ class RiskService:
                 "contract_id is required."
             )
 
-        self.bm25_indexer.load()
+        index_path = self.bm25_indexer.index_path
+
+        if not index_path.exists():
+            raise FileNotFoundError(
+                f"BM25 index not found: {index_path}"
+            )
+
+        current_mtime = index_path.stat().st_mtime_ns
+
+        # Chỉ load khi chưa có index trong RAM
+        # hoặc file index đã thay đổi.
+        if (
+            not self.bm25_indexer.is_ready
+            or self._index_mtime_ns != current_mtime
+        ):
+            self.bm25_indexer.load()
+
+            self._index_mtime_ns = (
+                index_path.stat().st_mtime_ns
+            )
 
         chunks = [
             chunk
             for chunk in self.bm25_indexer.chunks
-            if chunk.metadata.contract_id
-            == contract_id
+            if chunk.metadata.contract_id == contract_id
         ]
 
         if not chunks:
@@ -54,19 +69,13 @@ class RiskService:
             contract_id
         )
 
-        contract_chunks = convert_chunks(
-            chunks
-        )
+        contract_chunks = convert_chunks(chunks)
 
         final_state = self.graph.invoke(
-            {
-                "chunks": contract_chunks,
-            }
+            {"chunks": contract_chunks}
         )
 
-        result = final_state.get(
-            "final_assessment"
-        )
+        result = final_state.get("final_assessment")
 
         if result is None:
             raise RuntimeError(

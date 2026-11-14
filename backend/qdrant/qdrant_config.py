@@ -2,20 +2,12 @@ import os
 
 from dotenv import load_dotenv
 
-
+from backend.config.settings import Settings
 load_dotenv()
 
+settings = Settings
+QDRANT_URL = settings.QDRANT_URL
 
-QDRANT_URL = os.getenv(
-    "QDRANT_URL",
-    "http://localhost:6333",
-)
+QDRANT_API_KEY = settings.QDRANT_API_KEY
 
-QDRANT_API_KEY = os.getenv(
-    "QDRANT_API_KEY",
-)
-
-QDRANT_COLLECTION = os.getenv(
-    "QDRANT_COLLECTION",
-    "legal_documents",
-)
+QDRANT_COLLECTION = settings.QDRANT_COLLECTION

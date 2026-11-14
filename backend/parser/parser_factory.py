@@ -3,6 +3,7 @@ from parser.base_parser import BaseParser
 from parser.pdf_parser import PDFParser
 from parser.docx_parser import DocxParser
 from parser.txt_parser import TxtParser
+from parser.doc_parser import DOCParser
 from parser.exceptions import UnsupportedFileTypeError
 
 class ParserFactory:
@@ -10,6 +11,7 @@ class ParserFactory:
         ".pdf": PDFParser,
         ".docx": DocxParser,
         ".txt": TxtParser,
+        ".doc":DOCParser
     }
 
     @classmethod

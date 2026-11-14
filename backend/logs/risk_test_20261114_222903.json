@@ -1,0 +1,820 @@
+{
+  "contract_id": "13ddf486-2174-426c-b0dc-d54d10c46090",
+  "workflow": {
+    "seconds": 166.558,
+    "status": "success",
+    "error": null
+  },
+  "nodes": {
+    "create_global_summary": {
+      "calls": 1,
+      "seconds": 0.00024160000248230062,
+      "errors": 0
+    },
+    "create_batches_node": {
+      "calls": 1,
+      "seconds": 0.00024849999681464396,
+      "errors": 0
+    },
+    "run_agent_1_node": {
+      "calls": 1,
+      "seconds": 13.116361200001847,
+      "errors": 0
+    },
+    "run_agent_2_node": {
+      "calls": 1,
+      "seconds": 11.732228799999575,
+      "errors": 0
+    },
+    "merge_candidates_node": {
+      "calls": 1,
+      "seconds": 0.0005870000022696331,
+      "errors": 0
+    },
+    "run_agent_3_node": {
+      "calls": 1,
+      "seconds": 153.4119322000006,
+      "errors": 0
+    },
+    "build_final_assessment_node": {
+      "calls": 1,
+      "seconds": 0.00029550000181188807,
+      "errors": 0
+    }
+  },
+  "llm": {
+    "calls": 23,
+    "seconds": 125.01927470000737,
+    "errors": 0,
+    "calls_detail": [
+      {
+        "call": 1,
+        "seconds": 11.731,
+        "prompt_chars": 986,
+        "response_chars": 2006,
+        "status": "success"
+      },
+      {
+        "call": 1,
+        "seconds": 13.114,
+        "prompt_chars": 1235,
+        "response_chars": 2313,
+        "status": "success"
+      },
+      {
+        "call": 3,
+        "seconds": 4.848,
+        "prompt_chars": 2932,
+        "response_chars": 1064,
+        "status": "success"
+      },
+      {
+        "call": 4,
+        "seconds": 4.778,
+        "prompt_chars": 2932,
+        "response_chars": 1023,
+        "status": "success"
+      },
+      {
+        "call": 5,
+        "seconds": 4.485,
+        "prompt_chars": 2932,
+        "response_chars": 984,
+        "status": "success"
+      },
+      {
+        "call": 6,
+        "seconds": 5.161,
+        "prompt_chars": 2932,
+        "response_chars": 1026,
+        "status": "success"
+      },
+      {
+        "call": 7,
+        "seconds": 4.616,
+        "prompt_chars": 2932,
+        "response_chars": 1069,
+        "status": "success"
+      },
+      {
+        "call": 8,
+        "seconds": 4.857,
+        "prompt_chars": 2932,
+        "response_chars": 1060,
+        "status": "success"
+      },
+      {
+        "call": 9,
+        "seconds": 5.142,
+        "prompt_chars": 2932,
+        "response_chars": 1163,
+        "status": "success"
+      },
+      {
+        "call": 10,
+        "seconds": 4.566,
+        "prompt_chars": 2932,
+        "response_chars": 1062,
+        "status": "success"
+      },
+      {
+        "call": 11,
+        "seconds": 4.409,
+        "prompt_chars": 2932,
+        "response_chars": 1011,
+        "status": "success"
+      },
+      {
+        "call": 12,
+        "seconds": 5.048,
+        "prompt_chars": 2932,
+        "response_chars": 1125,
+        "status": "success"
+      },
+      {
+        "call": 13,
+        "seconds": 4.097,
+        "prompt_chars": 2932,
+        "response_chars": 1070,
+        "status": "success"
+      },
+      {
+        "call": 14,
+        "seconds": 5.355,
+        "prompt_chars": 2932,
+        "response_chars": 1244,
+        "status": "success"
+      },
+      {
+        "call": 15,
+        "seconds": 4.839,
+        "prompt_chars": 2932,
+        "response_chars": 1206,
+        "status": "success"
+      },
+      {
+        "call": 16,
+        "seconds": 4.901,
+        "prompt_chars": 2932,
+        "response_chars": 1155,
+        "status": "success"
+      },
+      {
+        "call": 17,
+        "seconds": 4.721,
+        "prompt_chars": 2932,
+        "response_chars": 1106,
+        "status": "success"
+      },
+      {
+        "call": 18,
+        "seconds": 4.999,
+        "prompt_chars": 2932,
+        "response_chars": 1160,
+        "status": "success"
+      },
+      {
+        "call": 19,
+        "seconds": 4.868,
+        "prompt_chars": 2932,
+        "response_chars": 1132,
+        "status": "success"
+      },
+      {
+        "call": 20,
+        "seconds": 2.945,
+        "prompt_chars": 2932,
+        "response_chars": 779,
+        "status": "success"
+      },
+      {
+        "call": 21,
+        "seconds": 4.927,
+        "prompt_chars": 2932,
+        "response_chars": 1079,
+        "status": "success"
+      },
+      {
+        "call": 22,
+        "seconds": 5.658,
+        "prompt_chars": 2932,
+        "response_chars": 1261,
+        "status": "success"
+      },
+      {
+        "call": 23,
+        "seconds": 4.954,
+        "prompt_chars": 2932,
+        "response_chars": 1220,
+        "status": "success"
+      }
+    ]
+  },
+  "legal_search": {
+    "calls": 13,
+    "seconds": 38.415564999995695,
+    "errors": 0,
+    "references_returned": 20,
+    "calls_detail": [
+      {
+        "call": 1,
+        "query": "dịch vụ đăng ký bản quyền tác giả",
+        "seconds": 0.767,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 2,
+        "query": "dịch vụ đăng ký bản quyền tác giả",
+        "seconds": 0.666,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 3,
+        "query": "phạm vi dịch vụ đăng ký nhãn hiệu Hoa Kỳ",
+        "seconds": 1.732,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 4,
+        "query": "phạm vi dịch vụ đăng ký nhãn hiệu Hoa Kỳ",
+        "seconds": 0.58,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 5,
+        "query": "quy định về phạm vi dịch vụ đăng ký bảo hộ nhãn hiệu hàng hóa tại EU",
+        "seconds": 0.431,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 6,
+        "query": "đăng ký bảo hộ nhãn hiệu hàng hóa tại EU",
+        "seconds": 1.5,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 7,
+        "query": "quy định về phương thức thanh toán bằng tiền mặt trong hợp đồng",
+        "seconds": 7.943,
+        "references_returned": 5,
+        "status": "success"
+      },
+      {
+        "call": 8,
+        "query": "điều kiện thanh toán hợp đồng",
+        "seconds": 6.346,
+        "references_returned": 5,
+        "status": "success"
+      },
+      {
+        "call": 9,
+        "query": "trách nhiệm đảm bảo khả năng đăng ký nhãn hiệu",
+        "seconds": 0.553,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 10,
+        "query": "trách nhiệm đảm bảo khả năng đăng ký nhãn hiệu",
+        "seconds": 2.427,
+        "references_returned": 0,
+        "status": "success"
+      },
+      {
+        "call": 11,
+        "query": "quy định pháp luật về phương thức thanh toán bằng tiền mặt",
+        "seconds": 3.028,
+        "references_returned": 5,
+        "status": "success"
+      },
+      {
+        "call": 12,
+        "query": "hoàn trả tiền khi dịch vụ không thành công",
+        "seconds": 10.787,
+        "references_returned": 5,
+        "status": "success"
+      },
+      {
+        "call": 13,
+        "query": "nghĩa vụ hoàn trả tiền khi dịch vụ không thành công",
+        "seconds": 1.656,
+        "references_returned": 0,
+        "status": "success"
+      }
+    ]
+  },
+  "schema_context": {
+    "calls": 8,
+    "seconds": 14.784398900002998,
+    "errors": 0,
+    "calls_detail": [
+      {
+        "call": 1,
+        "seconds": 4.503,
+        "status": "success"
+      },
+      {
+        "call": 2,
+        "seconds": 1.206,
+        "status": "success"
+      },
+      {
+        "call": 3,
+        "seconds": 1.411,
+        "status": "success"
+      },
+      {
+        "call": 4,
+        "seconds": 1.783,
+        "status": "success"
+      },
+      {
+        "call": 5,
+        "seconds": 1.922,
+        "status": "success"
+      },
+      {
+        "call": 6,
+        "seconds": 0.257,
+        "status": "success"
+      },
+      {
+        "call": 7,
+        "seconds": 1.835,
+        "status": "success"
+      },
+      {
+        "call": 8,
+        "seconds": 1.867,
+        "status": "success"
+      }
+    ]
+  },
+  "semantic_rerank": {
+    "calls": 4,
+    "seconds": 20.760743799997726,
+    "errors": 0,
+    "references_processed": 50,
+    "calls_detail": [
+      {
+        "call": 1,
+        "seconds": 6.23,
+        "candidate_count": 15,
+        "top_k": 5,
+        "query_chars": 63,
+        "status": "success"
+      },
+      {
+        "call": 2,
+        "seconds": 5.85,
+        "candidate_count": 15,
+        "top_k": 5,
+        "query_chars": 29,
+        "status": "success"
+      },
+      {
+        "call": 3,
+        "seconds": 1.518,
+        "candidate_count": 5,
+        "top_k": 5,
+        "query_chars": 58,
+        "status": "success"
+      },
+      {
+        "call": 4,
+        "seconds": 7.163,
+        "candidate_count": 15,
+        "top_k": 5,
+        "query_chars": 42,
+        "status": "success"
+      }
+    ]
+  },
+  "legal_search_stages": {
+    "_get_cached_graph_schema": {
+      "calls": 21,
+      "seconds": 3.0761746000098356,
+      "errors": 0,
+      "calls_detail": [
+        {
+          "call": 1,
+          "seconds": 3.076,
+          "status": "success"
+        },
+        {
+          "call": 2,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 3,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 4,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 5,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 6,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 7,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 8,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 9,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 10,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 11,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 12,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 13,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 14,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 15,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 16,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 17,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 18,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 19,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 20,
+          "seconds": 0.0,
+          "status": "success"
+        },
+        {
+          "call": 21,
+          "seconds": 0.0,
+          "status": "success"
+        }
+      ]
+    },
+    "_search_entities_with_driver": {
+      "calls": 30,
+      "seconds": 28.068907999993826,
+      "errors": 0,
+      "calls_detail": [
+        {
+          "call": 1,
+          "seconds": 1.425,
+          "status": "success"
+        },
+        {
+          "call": 2,
+          "seconds": 0.366,
+          "status": "success"
+        },
+        {
+          "call": 3,
+          "seconds": 0.352,
+          "status": "success"
+        },
+        {
+          "call": 4,
+          "seconds": 0.423,
+          "status": "success"
+        },
+        {
+          "call": 5,
+          "seconds": 0.197,
+          "status": "success"
+        },
+        {
+          "call": 6,
+          "seconds": 1.205,
+          "status": "success"
+        },
+        {
+          "call": 7,
+          "seconds": 1.437,
+          "status": "success"
+        },
+        {
+          "call": 8,
+          "seconds": 0.251,
+          "status": "success"
+        },
+        {
+          "call": 9,
+          "seconds": 0.273,
+          "status": "success"
+        },
+        {
+          "call": 10,
+          "seconds": 0.258,
+          "status": "success"
+        },
+        {
+          "call": 11,
+          "seconds": 1.41,
+          "status": "success"
+        },
+        {
+          "call": 12,
+          "seconds": 0.196,
+          "status": "success"
+        },
+        {
+          "call": 13,
+          "seconds": 0.187,
+          "status": "success"
+        },
+        {
+          "call": 14,
+          "seconds": 1.279,
+          "status": "success"
+        },
+        {
+          "call": 15,
+          "seconds": 0.179,
+          "status": "success"
+        },
+        {
+          "call": 16,
+          "seconds": 1.782,
+          "status": "success"
+        },
+        {
+          "call": 17,
+          "seconds": 1.439,
+          "status": "success"
+        },
+        {
+          "call": 18,
+          "seconds": 1.922,
+          "status": "success"
+        },
+        {
+          "call": 19,
+          "seconds": 0.284,
+          "status": "success"
+        },
+        {
+          "call": 20,
+          "seconds": 0.256,
+          "status": "success"
+        },
+        {
+          "call": 21,
+          "seconds": 0.255,
+          "status": "success"
+        },
+        {
+          "call": 22,
+          "seconds": 0.257,
+          "status": "success"
+        },
+        {
+          "call": 23,
+          "seconds": 2.148,
+          "status": "success"
+        },
+        {
+          "call": 24,
+          "seconds": 0.236,
+          "status": "success"
+        },
+        {
+          "call": 25,
+          "seconds": 1.834,
+          "status": "success"
+        },
+        {
+          "call": 26,
+          "seconds": 1.303,
+          "status": "success"
+        },
+        {
+          "call": 27,
+          "seconds": 1.866,
+          "status": "success"
+        },
+        {
+          "call": 28,
+          "seconds": 3.433,
+          "status": "success"
+        },
+        {
+          "call": 29,
+          "seconds": 1.348,
+          "status": "success"
+        },
+        {
+          "call": 30,
+          "seconds": 0.266,
+          "status": "success"
+        }
+      ]
+    },
+    "_search_relationships_with_driver": {
+      "calls": 13,
+      "seconds": 2.779119899994839,
+      "errors": 0,
+      "calls_detail": [
+        {
+          "call": 1,
+          "seconds": 0.352,
+          "status": "success"
+        },
+        {
+          "call": 2,
+          "seconds": 0.198,
+          "status": "success"
+        },
+        {
+          "call": 3,
+          "seconds": 0.251,
+          "status": "success"
+        },
+        {
+          "call": 4,
+          "seconds": 0.259,
+          "status": "success"
+        },
+        {
+          "call": 5,
+          "seconds": 0.187,
+          "status": "success"
+        },
+        {
+          "call": 6,
+          "seconds": 0.179,
+          "status": "success"
+        },
+        {
+          "call": 7,
+          "seconds": 0.124,
+          "status": "success"
+        },
+        {
+          "call": 8,
+          "seconds": 0.159,
+          "status": "success"
+        },
+        {
+          "call": 9,
+          "seconds": 0.258,
+          "status": "success"
+        },
+        {
+          "call": 10,
+          "seconds": 0.237,
+          "status": "success"
+        },
+        {
+          "call": 11,
+          "seconds": 0.162,
+          "status": "success"
+        },
+        {
+          "call": 12,
+          "seconds": 0.146,
+          "status": "success"
+        },
+        {
+          "call": 13,
+          "seconds": 0.267,
+          "status": "success"
+        }
+      ]
+    },
+    "_get_superseded_document_ids": {
+      "calls": 13,
+      "seconds": 0.5209831999964081,
+      "errors": 0,
+      "calls_detail": [
+        {
+          "call": 1,
+          "seconds": 0.046,
+          "status": "success"
+        },
+        {
+          "call": 2,
+          "seconds": 0.041,
+          "status": "success"
+        },
+        {
+          "call": 3,
+          "seconds": 0.042,
+          "status": "success"
+        },
+        {
+          "call": 4,
+          "seconds": 0.046,
+          "status": "success"
+        },
+        {
+          "call": 5,
+          "seconds": 0.043,
+          "status": "success"
+        },
+        {
+          "call": 6,
+          "seconds": 0.04,
+          "status": "success"
+        },
+        {
+          "call": 7,
+          "seconds": 0.036,
+          "status": "success"
+        },
+        {
+          "call": 8,
+          "seconds": 0.036,
+          "status": "success"
+        },
+        {
+          "call": 9,
+          "seconds": 0.037,
+          "status": "success"
+        },
+        {
+          "call": 10,
+          "seconds": 0.038,
+          "status": "success"
+        },
+        {
+          "call": 11,
+          "seconds": 0.042,
+          "status": "success"
+        },
+        {
+          "call": 12,
+          "seconds": 0.036,
+          "status": "success"
+        },
+        {
+          "call": 13,
+          "seconds": 0.039,
+          "status": "success"
+        }
+      ]
+    }
+  },
+  "duplicate_queries": {
+    "dịch vụ đăng ký bản quyền tác giả": 2,
+    "phạm vi dịch vụ đăng ký nhãn hiệu Hoa Kỳ": 2,
+    "trách nhiệm đảm bảo khả năng đăng ký nhãn hiệu": 2
+  },
+  "log_path": "logs\\risk_test_20261114_222903.log"
+}

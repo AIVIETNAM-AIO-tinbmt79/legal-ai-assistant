@@ -21,6 +21,8 @@ class QAState(TypedDict, total=False):
 
     conversation_id: str | None
 
+    user_id: str | None
+
     # --------------------------------------------------------
     # Retrieval
     # --------------------------------------------------------
@@ -83,3 +85,6 @@ class QAResult(BaseModel):
     sources: list[dict] = Field(
         default_factory=list
     )
+
+
+

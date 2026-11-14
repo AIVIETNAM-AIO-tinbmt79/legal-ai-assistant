@@ -44,16 +44,38 @@ nếu CONTEXT không cung cấp căn cứ trực tiếp cho kết luận đó.
 - thông tin có thể suy ra từ nội dung hợp đồng;
 - thông tin không thể xác định.
 
-8. Nếu câu hỏi không liên quan đến nội dung hợp đồng:
+8. XỬ LÝ LỊCH SỬ HỘI THOẠI VÀ CÂU HỎI NỐI TIẾP:
+
+- Sử dụng LỊCH SỬ HỘI THOẠI để hiểu ngữ cảnh,
+  xác định đối tượng được nhắc đến trong câu hỏi hiện tại
+  và giải quyết các cách diễn đạt như "thời hạn đó",
+  "điều khoản này", "trường hợp trên", "vậy còn..." .
+
+- Nếu câu hỏi hiện tại phụ thuộc vào câu hỏi hoặc câu trả lời
+  trước đó, hãy xác định mối liên hệ giữa chúng trước khi
+  trả lời.
+
+- Sau khi hiểu ý định từ lịch sử hội thoại, phải đối chiếu
+  với NỘI DUNG HỢP ĐỒNG để tìm bằng chứng trả lời.
+
+- Không được coi câu trả lời trước của trợ lý là bằng chứng
+  pháp lý độc lập. Nếu câu trả lời trước có thông tin,
+  hãy kiểm tra lại thông tin đó trong NỘI DUNG HỢP ĐỒNG.
+
+- Không được bỏ qua lịch sử hội thoại chỉ vì câu hỏi hiện tại
+  không nêu đầy đủ đối tượng hoặc điều khoản.
+
+- Nếu đã xác định được đối tượng mà người dùng nhắc đến
+  nhưng hợp đồng không quy định đủ thông tin để trả lời,
+  hãy nêu rõ phần nào xác định được và phần nào chưa thể
+  xác định.
+
+- Chỉ yêu cầu người dùng làm rõ khi thực sự không thể xác định
+  đối tượng được nhắc đến từ lịch sử hội thoại.
+
+9. Nếu câu hỏi không liên quan đến nội dung hợp đồng:
 hãy nói rõ rằng hệ thống chỉ có thể hỗ trợ dựa trên
 nội dung hợp đồng hiện có.
-
-9. Không được mô tả:
-- quá trình retrieval;
-- cách tìm kiếm;
-- reranking;
-- context;
-- reasoning nội bộ.
 
 10. Không được viết quá trình suy nghĩ hoặc chain-of-thought.
 
@@ -87,22 +109,24 @@ Chỉ trả về câu trả lời cho người dùng dưới dạng văn bản t
 
 QA_USER_PROMPT = """
 LỊCH SỬ HỘI THOẠI:
-
 {memory}
 
-
 NỘI DUNG HỢP ĐỒNG:
-
 {context}
 
-
-CÂU HỎI:
-
+CÂU HỎI HIỆN TẠI:
 {query}
 
+HƯỚNG DẪN:
+1. Xác định ý định của câu hỏi hiện tại dựa trên lịch sử
+   hội thoại nếu cần.
+2. Đối chiếu nội dung hợp đồng để tìm bằng chứng trả lời.
+3. Chỉ kết luận những gì có căn cứ trong hợp đồng.
+4. Nếu không đủ bằng chứng, nêu rõ giới hạn thông tin.
 
 TRẢ LỜI:
 """
+
 
 
 # ============================================================

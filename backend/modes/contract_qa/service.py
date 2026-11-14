@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 
 from app.database.models.contract import ContractModel
-from app.database.repositories.contract import ContractRepository
+from app.database.repositories.contract_repository import ContractRepository
 
 from indexing.document_indexer import DocumentIndexer
 
@@ -112,8 +112,9 @@ class ContractService:
         try:
 
             self.contract_repository.update_status(
-                contract,
-                "indexing",
+                contract_id=contract.id,
+                user_id=user_id,
+                status="indexing",
             )
 
             self.document_indexer.index(
@@ -126,8 +127,9 @@ class ContractService:
             # ==================================================
 
             self.contract_repository.update_status(
-                contract,
-                "indexed",
+                contract_id=contract.id,
+                user_id=user_id,
+                status="indexed",
             )
 
         except Exception:
@@ -137,10 +139,10 @@ class ContractService:
             # ==================================================
 
             self.contract_repository.update_status(
-                contract,
-                "failed",
-            )
-
+                contract_id=contract.id,
+                user_id=user_id,
+                status="failed",
+        )
             raise
 
         return contract

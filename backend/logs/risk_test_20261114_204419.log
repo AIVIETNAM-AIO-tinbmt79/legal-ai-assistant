@@ -1,0 +1,98 @@
+2026-11-14 20:44:19,974 | INFO | ======================================================================
+2026-11-14 20:44:19,974 | INFO | RISK ASSESSMENT PERFORMANCE TEST
+2026-11-14 20:44:19,975 | INFO | Contract ID: 13ddf486-2174-426c-b0dc-d54d10c46090
+2026-11-14 20:44:19,975 | INFO | ======================================================================
+2026-11-14 20:44:34,062 | INFO | [INPUT] Số chunk của hợp đồng: 16
+2026-11-14 20:44:34,063 | INFO | [INPUT] Thời gian lấy chunk từ BM25: 0.01 giây
+2026-11-14 20:44:34,070 | INFO | [NODE END] modes.risk_assessment.workflow.create_global_summary | 0.00 giây
+2026-11-14 20:44:34,071 | INFO | [NODE END] modes.risk_assessment.workflow.create_batches_node | 0.00 giây
+2026-11-14 20:44:43,684 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 9.61 giây
+2026-11-14 20:44:43,684 | INFO | [NODE END] modes.risk_assessment.workflow.run_agent_2_node | 9.61 giây
+2026-11-14 20:44:46,249 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 12.18 giây
+2026-11-14 20:44:46,249 | INFO | [NODE END] modes.risk_assessment.workflow.run_agent_1_node | 12.18 giây
+2026-11-14 20:44:46,251 | INFO | [NODE END] modes.risk_assessment.workflow.merge_candidates_node | 0.00 giây
+2026-11-14 20:44:55,140 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.94 giây
+2026-11-14 20:44:56,351 | ERROR | [ERROR] modes.risk_assessment.legal_tools._semantic_rerank: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 78, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\legal_tools.py", line 1134, in _semantic_rerank
+    raise RuntimeError(
+RuntimeError: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+2026-11-14 20:44:56,353 | INFO | [RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 0.00 giây
+2026-11-14 20:44:56,353 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 1.21 giây
+2026-11-14 20:45:00,913 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.56 giây
+2026-11-14 20:45:08,737 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 5.12 giây
+2026-11-14 20:45:09,668 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 0.93 giây
+2026-11-14 20:45:14,789 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 5.12 giây
+2026-11-14 20:45:15,862 | ERROR | [ERROR] modes.risk_assessment.legal_tools._semantic_rerank: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 78, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\legal_tools.py", line 1134, in _semantic_rerank
+    raise RuntimeError(
+RuntimeError: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+2026-11-14 20:45:15,865 | INFO | [RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 0.00 giây
+2026-11-14 20:45:15,865 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 1.07 giây
+2026-11-14 20:45:20,690 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.82 giây
+2026-11-14 20:45:27,903 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 5.29 giây
+2026-11-14 20:45:29,879 | ERROR | [ERROR] modes.risk_assessment.legal_tools._semantic_rerank: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 78, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\legal_tools.py", line 1134, in _semantic_rerank
+    raise RuntimeError(
+RuntimeError: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+2026-11-14 20:45:29,879 | INFO | [RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 0.00 giây
+2026-11-14 20:45:29,879 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 1.98 giây
+2026-11-14 20:45:35,536 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 5.65 giây
+2026-11-14 20:45:42,199 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.80 giây
+2026-11-14 20:45:44,215 | ERROR | [ERROR] modes.risk_assessment.legal_tools._semantic_rerank: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 78, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\legal_tools.py", line 1134, in _semantic_rerank
+    raise RuntimeError(
+RuntimeError: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+2026-11-14 20:45:44,221 | INFO | [RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 0.00 giây
+2026-11-14 20:45:44,221 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 2.02 giây
+2026-11-14 20:45:47,394 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 3.17 giây
+2026-11-14 20:45:52,297 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.70 giây
+2026-11-14 20:45:53,448 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 1.15 giây
+2026-11-14 20:45:58,159 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.71 giây
+2026-11-14 20:46:01,322 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 3.17 giây
+2026-11-14 20:46:06,076 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.75 giây
+2026-11-14 20:46:12,772 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.86 giây
+2026-11-14 20:46:13,962 | ERROR | [ERROR] modes.risk_assessment.legal_tools._semantic_rerank: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 78, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\legal_tools.py", line 1134, in _semantic_rerank
+    raise RuntimeError(
+RuntimeError: Shared reranker chưa được khởi tạo. Hãy kiểm tra FastAPI lifespan.
+2026-11-14 20:46:13,964 | INFO | [RERANK] modes.risk_assessment.legal_tools._semantic_rerank | 0.00 giây
+2026-11-14 20:46:13,965 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 1.18 giây
+2026-11-14 20:46:18,309 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 4.34 giây
+2026-11-14 20:46:26,254 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 6.05 giây
+2026-11-14 20:46:27,176 | INFO | [LEGAL SEARCH] modes.risk_assessment.agent.legal_search | 0.92 giây
+2026-11-14 20:46:32,450 | INFO | [LLM] modes.risk_assessment.agent.call_llm | 5.27 giây
+2026-11-14 20:46:32,450 | INFO | [NODE END] modes.risk_assessment.workflow.run_agent_3_node | 106.20 giây
+2026-11-14 20:46:32,450 | WARNING | Đã dừng test bằng Ctrl+C.
+2026-11-14 20:46:32,450 | INFO | ======================================================================
+2026-11-14 20:46:32,450 | INFO | THỐNG KÊ HIỆU NĂNG
+2026-11-14 20:46:32,450 | INFO | ======================================================================
+2026-11-14 20:46:32,450 | INFO | LLM: 18 lần | 99.94 giây cộng dồn
+2026-11-14 20:46:32,450 | INFO | Legal search: 9 lần | 13.64 giây cộng dồn
+2026-11-14 20:46:32,450 | INFO | Rerank: 5 lần | 0.01 giây cộng dồn
+2026-11-14 20:46:32,450 | INFO | Schema context: 7 lần | 14.38 giây cộng dồn
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.create_global_summary | calls=1 | total=0.00s | max=0.00s
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.create_batches_node | calls=1 | total=0.00s | max=0.00s
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.run_agent_2_node | calls=1 | total=9.61s | max=9.61s
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.run_agent_1_node | calls=1 | total=12.18s | max=12.18s
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.merge_candidates_node | calls=1 | total=0.00s | max=0.00s
+2026-11-14 20:46:32,450 | INFO | Node modes.risk_assessment.workflow.run_agent_3_node | calls=1 | total=106.20s | max=106.20s

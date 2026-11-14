@@ -15,6 +15,9 @@ from neo4j import GraphDatabase
 from .schemas import LegalReference
 from config.settings import settings
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # CONFIG
@@ -36,6 +39,15 @@ CHUNKS_FILE = Path(
     )
 )
 
+_chunks_cache = None
+_chunks_cache_path = None
+_chunks_cache_mtime_ns = None
+
+_chunk_offsets_cache = None
+_chunk_offsets_path = None
+_chunk_offsets_mtime_ns = None
+_chunk_offsets_size = None
+
 MAX_ENTITIES = 120
 MAX_RELATIONSHIPS = 10  # Agent 3 chỉ mở rộng tối đa 10 cạnh mỗi lượt search
 MAX_REFERENCES = 8
@@ -43,10 +55,15 @@ MAX_REFERENCES = 8
 # Candidate/reranker settings.
 # Model + device are centralized in config.settings so every retrieval
 # pipeline uses the same reranker configuration.
-LEGAL_RERANK_CANDIDATES = max(
-    int(os.getenv("LEGAL_RERANK_CANDIDATES", "30")),
-    1,
-)
+LEGAL_RERANK_CANDIDATES = settings.LEGAL_RERANK_CANDIDATES
+
+_shared_reranker = None
+
+
+def set_shared_reranker(reranker):
+    """Đăng ký CrossEncoderReranker được dùng chung toàn ứng dụng."""
+    global _shared_reranker
+    _shared_reranker = reranker
 
 SUPERSESSION_RELATIONS = {"SUPERSEDES", "REPLACES"}
 
@@ -80,6 +97,126 @@ class LegalSearchResult:
 # TEXT HELPERS
 # ============================================================
 
+def _build_chunk_offset_index() -> dict[str, int]:
+    """
+    Tạo index chunk_id -> byte offset.
+
+    Chỉ đọc nội dung từng dòng để lấy ID và vị trí.
+    Không giữ toàn bộ chunks trong RAM.
+    Index được tái sử dụng cho các truy vấn tiếp theo.
+    """
+    global _chunk_offsets_cache
+    global _chunk_offsets_path
+    global _chunk_offsets_mtime_ns
+    global _chunk_offsets_size
+
+    path = Path(CHUNKS_FILE).resolve()
+
+    if not path.exists():
+        raise FileNotFoundError(f"Chunks file not found: {path}")
+
+    stat = path.stat()
+    current_path = str(path)
+    current_mtime_ns = stat.st_mtime_ns
+    current_size = stat.st_size
+
+    if (
+        _chunk_offsets_cache is not None
+        and _chunk_offsets_path == current_path
+        and _chunk_offsets_mtime_ns == current_mtime_ns
+        and _chunk_offsets_size == current_size
+    ):
+        return _chunk_offsets_cache
+
+    offsets = {}
+
+    # Mở ở chế độ binary để byte offset luôn chính xác với seek().
+    with path.open("rb") as f:
+        while True:
+            offset = f.tell()
+            line = f.readline()
+
+            if not line:
+                break
+
+            if not line.strip():
+                continue
+
+            try:
+                item = json.loads(line)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+
+            chunk_id = item.get("chunk_id") or item.get("id")
+
+            if chunk_id is not None:
+                offsets[str(chunk_id)] = offset
+
+    # Không cache index nếu file thay đổi trong lúc xây dựng.
+    final_stat = path.stat()
+
+    if (
+        final_stat.st_mtime_ns != current_mtime_ns
+        or final_stat.st_size != current_size
+    ):
+        return _build_chunk_offset_index()
+
+    _chunk_offsets_cache = offsets
+    _chunk_offsets_path = current_path
+    _chunk_offsets_mtime_ns = current_mtime_ns
+    _chunk_offsets_size = current_size
+
+    return _chunk_offsets_cache
+
+
+def _load_chunks_by_ids(
+    chunk_ids: set[str] | list[str],
+) -> dict[str, dict]:
+    """
+    Chỉ đọc nội dung của những chunk có ID được yêu cầu.
+
+    Quy trình:
+    1. Lấy byte offset từ index.
+    2. Seek đến từng dòng cần thiết.
+    3. Parse JSON và trả về dict theo chunk_id.
+    """
+    requested_ids = {
+        str(chunk_id)
+        for chunk_id in chunk_ids
+        if chunk_id is not None
+    }
+
+    if not requested_ids:
+        return {}
+
+    offsets = _build_chunk_offset_index()
+    path = Path(CHUNKS_FILE).resolve()
+    result = {}
+
+    with path.open("rb") as f:
+        for chunk_id in requested_ids:
+            offset = offsets.get(chunk_id)
+
+            if offset is None:
+                continue
+
+            f.seek(offset)
+            line = f.readline()
+
+            if not line:
+                continue
+
+            try:
+                item = json.loads(line)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+
+            actual_id = item.get("chunk_id") or item.get("id")
+
+            if actual_id is not None and str(actual_id) == chunk_id:
+                result[chunk_id] = item
+
+    return result
 
 def normalize_text(text: Any) -> str:
     if text is None:
@@ -134,7 +271,10 @@ def _safe_relationship_types(
 # ============================================================
 
 
+@lru_cache(maxsize=1)
 def get_neo4j_driver():
+    """Tạo và tái sử dụng một Neo4j Driver trong mỗi worker."""
+
     if not NEO4J_URI:
         raise RuntimeError("Thiếu NEO4J_URI.")
 
@@ -150,6 +290,16 @@ def get_neo4j_driver():
         NEO4J_URI,
         auth=(NEO4J_USER, NEO4J_PASSWORD),
     )
+
+
+def close_neo4j_driver():
+    """Đóng driver dùng chung khi ứng dụng dừng."""
+
+    if get_neo4j_driver.cache_info().currsize > 0:
+        driver = get_neo4j_driver()
+        get_neo4j_driver.cache_clear()
+        driver.close()
+
 
 
 # ============================================================
@@ -189,52 +339,38 @@ def _get_graph_schema_with_driver(driver) -> dict:
     }
 
 
-def get_graph_schema_context(
-    search_phrases: list[str] | None = None,
-    max_entities: int = 20,
-    max_relationships: int = 30,
-) -> dict:
-    """
-    Context cho Agent 3:
-    - toàn bộ Entity.type và relationship type đang có trong DB;
-    - một nhóm Entity khớp với risk hiện tại để Agent định hướng.
+# Cache schema Neo4j trong bộ nhớ của mỗi worker
+_graph_schema_cache = None
 
-    Không truy vấn Relationship ở bước này. Agent 3 sẽ chọn relationship_types
-    trước; legal_search mới truy vấn tối đa relationship_top_k cạnh phù hợp.
-    Schema inventory được lấy trực tiếp từ Neo4j; không hardcode type.
-    """
-    driver = get_neo4j_driver()
-    try:
-        schema = _get_graph_schema_with_driver(driver)
-        phrases = _clean_phrases(search_phrases)
-        entities = _search_entities_with_driver(
-            driver=driver,
-            search_phrases=phrases,
-            entity_types=[],
-            limit=max(1, min(int(max_entities), MAX_ENTITIES)),
-        ) if phrases else []
-        # Chỉ gửi Entity mẫu và inventory type. Không mở rộng cạnh trước
-        # khi Agent 3 chọn relationship_types, tránh một truy vấn thừa.
-        # Chỉ gửi trường cần thiết cho LLM, không đưa JSON provenance dài.
-        compact_entities = []
-        for item in entities:
-            compact_entities.append({
-                "entity_id": item.get("entity_id"),
-                "text": item.get("text"),
-                "normalized_text": item.get("normalized_text"),
-                "type": item.get("type"),
-                "description": (item.get("description") or "")[:240],
-                "chunk_ids": (item.get("chunk_ids") or [])[:8],
-                "score": item.get("score"),
-            })
 
-        return {
-            **schema,
-            "matched_entities": compact_entities,
-            "matched_relationships": [],
-        }
-    finally:
-        driver.close()
+def _get_cached_graph_schema(driver) -> dict:
+    """
+    Dùng lại schema đã đọc nếu có.
+    Nếu chưa có cache, truy vấn Neo4j bằng driver hiện tại.
+    """
+    global _graph_schema_cache
+
+    if _graph_schema_cache is None:
+        _graph_schema_cache = _get_graph_schema_with_driver(driver)
+
+    # Trả bản sao để caller không vô tình sửa cache gốc
+    return {
+        "entity_types": list(_graph_schema_cache["entity_types"]),
+        "relationship_types": list(
+            _graph_schema_cache["relationship_types"]
+        ),
+    }
+
+
+def clear_graph_schema_cache() -> None:
+    """
+    Gọi hàm này nếu schema Neo4j thay đổi khi ứng dụng đang chạy.
+    Lần truy vấn tiếp theo sẽ đọc lại schema.
+    """
+    global _graph_schema_cache
+    _graph_schema_cache = None
+
+
 
 
 # ============================================================
@@ -426,6 +562,55 @@ def _search_entities_with_driver(
     )[:limit]
 
 
+def get_graph_schema_context(
+    search_phrases: list[str] | None = None,
+    max_entities: int = 20,
+    max_relationships: int = 30,
+) -> dict:
+    """
+    Context cho Agent 3:
+    - Toàn bộ Entity.type và relationship type đang có trong DB.
+    - Một nhóm Entity khớp với risk hiện tại.
+
+    Sử dụng Neo4j Driver dùng chung, không đóng Driver sau truy vấn.
+    """
+    driver = get_neo4j_driver()
+
+    schema = _get_cached_graph_schema(driver)
+
+    phrases = _clean_phrases(search_phrases)
+
+    entities = (
+        _search_entities_with_driver(
+            driver=driver,
+            search_phrases=phrases,
+            entity_types=[],
+            limit=max(1, min(int(max_entities), MAX_ENTITIES)),
+        )
+        if phrases
+        else []
+    )
+
+    compact_entities = []
+
+    for item in entities:
+        compact_entities.append({
+            "entity_id": item.get("entity_id"),
+            "text": item.get("text"),
+            "normalized_text": item.get("normalized_text"),
+            "type": item.get("type"),
+            "description": (item.get("description") or "")[:240],
+            "chunk_ids": (item.get("chunk_ids") or [])[:8],
+            "score": item.get("score"),
+        })
+
+    return {
+        **schema,
+        "matched_entities": compact_entities,
+        "matched_relationships": [],
+    }
+
+
 def search_entities(
     search_phrases: list[str] | None = None,
     entity_types: list[str] | None = None,
@@ -436,27 +621,23 @@ def search_entities(
     """
     Public entity-search API.
 
-    - Test có thể gọi trực tiếp mà không cần truyền driver.
-    - legal_search có thể truyền driver để tái sử dụng connection.
+    Nếu không truyền driver, sử dụng Neo4j Driver dùng chung.
+    Không đóng Driver sau mỗi lần tìm kiếm.
     """
-    owns_driver = driver is None
-    if owns_driver:
+    if driver is None:
         driver = get_neo4j_driver()
 
     requested_limit = top_k if top_k is not None else limit
+
     if requested_limit is None:
         requested_limit = MAX_ENTITIES
 
-    try:
-        return _search_entities_with_driver(
-            driver=driver,
-            search_phrases=search_phrases or [],
-            entity_types=entity_types or [],
-            limit=requested_limit,
-        )
-    finally:
-        if owns_driver:
-            driver.close()
+    return _search_entities_with_driver(
+        driver=driver,
+        search_phrases=search_phrases or [],
+        entity_types=entity_types or [],
+        limit=requested_limit,
+    )
 
 
 # ============================================================
@@ -567,9 +748,7 @@ def _search_relationships_with_driver(
         r.document_ids AS relationship_document_ids,
         r.evidence AS evidence,
         r.evidence_list AS evidence_list,
-        r.provenance_count AS provenance_count,
-        r.needs_semantic_review AS needs_semantic_review,
-        relevance AS score
+        r.provenance_json AS provenance_json
 
     ORDER BY relevance DESC, coalesce(r.provenance_count, 0) DESC
     LIMIT $limit
@@ -597,29 +776,25 @@ def search_relationships(
     """
     Public relationship-search API.
 
-    Test có thể truyền search_phrases + relationship_types trực tiếp.
-    Nếu có entity_ids thì dùng trực tiếp; nếu không, tìm Entity trước.
+    Nếu không truyền driver, sử dụng Neo4j Driver dùng chung.
+    Không đóng Driver sau mỗi lần tìm kiếm.
     """
-    owns_driver = driver is None
-    if owns_driver:
+    if driver is None:
         driver = get_neo4j_driver()
 
     requested_limit = top_k if top_k is not None else limit
+
     if requested_limit is None:
         requested_limit = MAX_RELATIONSHIPS
 
-    try:
-        return _search_relationships_with_driver(
-            driver=driver,
-            entity_ids=entity_ids,
-            relationship_types=relationship_types or [],
-            limit=requested_limit,
-            search_phrases=search_phrases,
-            top_k=requested_limit,
-        )
-    finally:
-        if owns_driver:
-            driver.close()
+    return _search_relationships_with_driver(
+        driver=driver,
+        entity_ids=entity_ids,
+        relationship_types=relationship_types or [],
+        limit=requested_limit,
+        search_phrases=search_phrases,
+        top_k=requested_limit,
+    )
 
 
 # ============================================================
@@ -804,50 +979,60 @@ def load_chunks_file() -> dict[str, dict]:
     return load_chunks()
 
 
+
 def load_chunks() -> dict[str, dict]:
-    """
-    Load backend/data/chunks.jsonl.
+    global _chunks_cache
+    global _chunks_cache_path
+    global _chunks_cache_mtime_ns
 
-    Neo4j lưu chunk_ids trên Entity/Relationship để truy xuất provenance.
-    Nội dung pháp luật đầy đủ được lấy từ chunks.jsonl.
-    """
-
-    path = Path(CHUNKS_FILE)
+    path = Path(CHUNKS_FILE).resolve()
 
     if not path.exists():
         raise FileNotFoundError(
-            f"Không tìm thấy chunks.jsonl: {path}"
+            f"Chunks file not found: {path}"
         )
 
+    current_path = str(path)
+    current_mtime_ns = path.stat().st_mtime_ns
+
+    # Cache còn hợp lệ: không đọc file lần nữa
+    if (
+        _chunks_cache is not None
+        and _chunks_cache_path == current_path
+        and _chunks_cache_mtime_ns == current_mtime_ns
+    ):
+        return _chunks_cache
+
+    # Đọc lại khi chưa có cache hoặc file đã thay đổi
     chunks = {}
 
-    with path.open(
-        "r",
-        encoding="utf-8",
-    ) as file:
-        for line_number, line in enumerate(file, 1):
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
             line = line.strip()
 
             if not line:
                 continue
 
-            try:
-                data = json.loads(line)
-            except json.JSONDecodeError:
-                print(
-                    f"[Chunks] Bỏ dòng JSON lỗi: {line_number}"
-                )
-                continue
+            item = json.loads(line)
 
-            chunk_id = (
-                data.get("chunk_id")
-                or data.get("id")
-            )
+            # Giữ nguyên định dạng ID của dữ liệu hiện tại
+            chunk_id = item.get("chunk_id") or item.get("id")
 
-            if chunk_id:
-                chunks[chunk_id] = data
+            if chunk_id is not None:
+                chunks[str(chunk_id)] = item
 
-    return chunks
+    # Chỉ cập nhật cache nếu file không đổi trong lúc đọc
+    final_mtime_ns = path.stat().st_mtime_ns
+
+    if final_mtime_ns != current_mtime_ns:
+        # File đã đổi trong lúc đọc, thử đọc lại
+        return load_chunks()
+
+    _chunks_cache = chunks
+    _chunks_cache_path = current_path
+    _chunks_cache_mtime_ns = final_mtime_ns
+
+    return _chunks_cache
 
 
 # ============================================================
@@ -1031,6 +1216,7 @@ def _get_legal_reranker():
     )
 
 
+
 def _reference_rerank_text(reference: LegalReference) -> str:
     """Build the text seen by the semantic reranker."""
     parts = []
@@ -1068,20 +1254,21 @@ def _semantic_rerank(
     if not references or not query.strip():
         return references[:top_k]
 
-    reranker = _get_legal_reranker()
-
-    if reranker is None:
-        return references[:top_k]
+    if _shared_reranker is None:
+        raise RuntimeError(
+            "Shared reranker chưa được khởi tạo. "
+            "Hãy kiểm tra FastAPI lifespan."
+        )
 
     pairs = [
         (query, _reference_rerank_text(reference))
         for reference in references
     ]
 
-    scores = reranker.predict(
-        pairs,
-        show_progress_bar=False,
-    )
+    scores = _shared_reranker.model.predict(
+            pairs,
+            show_progress_bar=False,
+        )
 
     scored = []
 
@@ -1164,53 +1351,52 @@ def legal_search(
         MAX_REFERENCES,
     )
 
-    chunks = load_chunks()
+    chunks = {}
     driver = get_neo4j_driver()
     superseded_document_ids = set()
 
-    try:
-        graph_schema = _get_graph_schema_with_driver(driver)
-        valid_entity_types = set(graph_schema["entity_types"])
-        valid_relationship_types = set(graph_schema["relationship_types"])
+   
+    graph_schema = _get_cached_graph_schema(driver)
+    valid_entity_types = set(graph_schema["entity_types"])
+    valid_relationship_types = set(graph_schema["relationship_types"])
 
-        # Chỉ sử dụng type thực sự tồn tại trong database.
-        requested_entity_types = [
-            str(item).strip()
-            for item in (entity_types or [])
-            if str(item).strip() in valid_entity_types
-        ]
-        requested_relationship_types = [
-            item for item in _safe_relationship_types(relationship_types)
-            if item in valid_relationship_types
-        ]
+    # Chỉ sử dụng type thực sự tồn tại trong database.
+    requested_entity_types = [
+        str(item).strip()
+        for item in (entity_types or [])
+        if str(item).strip() in valid_entity_types
+    ]
+    requested_relationship_types = [
+        item for item in _safe_relationship_types(relationship_types)
+        if item in valid_relationship_types
+    ]
 
-        entities = _search_entities_with_driver(
-            driver=driver,
-            search_phrases=phrases,
-            entity_types=requested_entity_types,
-            limit=MAX_ENTITIES,
-        )
+    entities = _search_entities_with_driver(
+        driver=driver,
+        search_phrases=phrases,
+        entity_types=requested_entity_types,
+        limit=MAX_ENTITIES,
+    )
 
-        entity_ids = [
-            entity.get("entity_id")
-            for entity in entities
-            if entity.get("entity_id")
-        ]
+    entity_ids = [
+        entity.get("entity_id")
+        for entity in entities
+        if entity.get("entity_id")
+    ]
 
-        relationships = _search_relationships_with_driver(
-            driver=driver,
-            entity_ids=entity_ids,
-            relationship_types=requested_relationship_types,
-            top_k=min(max(int(relationship_top_k), 1), MAX_RELATIONSHIPS),
-            search_phrases=phrases,
-        )
+    relationships = _search_relationships_with_driver(
+        driver=driver,
+        entity_ids=entity_ids,
+        relationship_types=requested_relationship_types,
+        top_k=min(max(int(relationship_top_k), 1), MAX_RELATIONSHIPS),
+        search_phrases=phrases,
+    )
 
-        superseded_document_ids = _get_superseded_document_ids(
-            driver=driver,
-        )
+    superseded_document_ids = _get_superseded_document_ids(
+        driver=driver,
+    )
 
-    finally:
-        driver.close()
+    
 
     # --------------------------------------------------------
     # Candidate chunk IDs (Entity/Relationship lưu mảng chunk_ids)
@@ -1254,20 +1440,15 @@ def legal_search(
     # --------------------------------------------------------
     # Lexical fallback
     # --------------------------------------------------------
-    # Không phụ thuộc hoàn toàn vào entity extraction.
-    # Nếu một điều khoản có phrase trực tiếp nhưng chưa có Entity,
-    # nó vẫn được đưa vào candidate set.
-    lexical_candidates = _lexical_chunk_candidates(
-        chunks=chunks,
-        search_phrases=phrases,
-        limit=40,
-    )
-
-    for chunk_id, _lexical_score in lexical_candidates:
-        candidate_chunk_ids.add(chunk_id)
+    
 
     if not candidate_chunk_ids:
-        return LegalSearchResult(query=query, search_phrases=phrases)
+        return LegalSearchResult(
+            query=query,
+            search_phrases=phrases,
+            entities=entities,
+            relationships=relationships,
+        )
 
     # Relationship evidence chứa phrase thì cộng nhẹ điểm cho các chunk
     # provenance; relationship không tự tạo kết luận pháp lý.
@@ -1295,25 +1476,42 @@ def legal_search(
             chunk_scores[chunk_id] = chunk_scores.get(chunk_id, 0.0) + relation_bonus
 
     # --------------------------------------------------------
-    # Build references from chunks.jsonl
+    # Load only graph-linked chunks
     # --------------------------------------------------------
+    logger.info(
+        "[RETRIEVAL DEBUG] query=%r | entities=%d | "
+        "relationships=%d | candidate_chunk_ids=%d",
+        query,
+        len(entities),
+        len(relationships),
+        len(candidate_chunk_ids),
+    )
 
-    lexical_score_map = dict(lexical_candidates)
+    chunks = _load_chunks_by_ids(candidate_chunk_ids)
 
-    for chunk_id, lexical_score in lexical_score_map.items():
-        # Nếu chunk đã có entity score, lexical fallback chỉ bổ sung nhẹ.
-        # Nếu chưa có, score này là tín hiệu candidate ban đầu.
-        chunk_scores[chunk_id] = (
-            chunk_scores.get(chunk_id, 0.0)
-            + lexical_score * 0.35
+    logger.info(
+    "[RETRIEVAL DEBUG] loaded_chunks=%d",
+    len(chunks),
+)
+
+    if not chunks:
+        return LegalSearchResult(
+            query=query,
+            search_phrases=phrases,
+            entities=entities,
+            relationships=relationships,
         )
+
+    # --------------------------------------------------------
+    # Build references from retrieved chunks
+    # --------------------------------------------------------
 
     references = []
 
     for chunk_id in candidate_chunk_ids:
         data = chunks.get(chunk_id)
 
-        if not data:
+        if data is None:
             continue
 
         references.append(
@@ -1323,6 +1521,8 @@ def legal_search(
                 score=chunk_scores.get(chunk_id, 0.0),
             )
         )
+
+
 
     # --------------------------------------------------------
     # Rank

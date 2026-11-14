@@ -179,65 +179,37 @@ class QANodes:
     # Load Memory
     # ========================================================
 
-    def load_memory(
-        self,
-        state,
-    ):
-
-        conversation_id = (
-            state.get(
-                "conversation_id"
-            )
-        )
-
+    def load_memory(self, state):
+        conversation_id = state.get("conversation_id")
+        user_id = state.get("user_id")
 
         if (
             not conversation_id
+            or not user_id
             or self.memory_manager is None
         ):
+            return {"memory": ""}
 
-            return {
-                "memory": ""
-            }
-
-
-        memory = (
-            self.memory_manager
-            .get_memory_prompt(
-                conversation_id
-            )
+        memory = self.memory_manager.get_memory_prompt(
+            conversation_id=conversation_id,
+            user_id=user_id,
         )
 
-
-        return {
-            "memory": memory or ""
-        }
+        return {"memory": memory or ""}
 
 
     # ========================================================
     # Build Prompt
     # ========================================================
 
-    def build_prompt_node(
-        self,
-        state,
-    ):
+    
+    
+    def build_prompt_node(self, state):
+        query = state.get("query", "")
+        context = state.get("context", "")
+        memory = state.get("memory", "")
 
-        query = (
-            state.get("query", "")
-            or ""
-        )
-
-        context = (
-            state.get("context", "")
-            or ""
-        )
-
-        memory = (
-            state.get("memory", "")
-            or ""
-        )
-
+        from .prompts import build_prompt
 
         prompt = build_prompt(
             query=query,
@@ -245,12 +217,7 @@ class QANodes:
             memory=memory,
         )
 
-
-        return {
-            "prompt": prompt
-        }
-
-
+        return {"prompt": prompt}
     # ========================================================
     # Generate Answer
     # ========================================================
@@ -307,58 +274,5 @@ class QANodes:
         state,
     ):
 
-        conversation_id = (
-            state.get(
-                "conversation_id"
-            )
-        )
-
-        query = (
-            state.get("query", "")
-            or ""
-        ).strip()
-
-        answer = (
-            state.get("answer", "")
-            or ""
-        ).strip()
-
-
-        if (
-            not conversation_id
-            or self.memory_manager is None
-        ):
-
             return {}
 
-
-        # ----------------------------------------------------
-        # Save user message
-        #
-        # IMPORTANT:
-        # We save this AFTER loading memory.
-        # Therefore the current query is not duplicated
-        # inside the history used for this answer.
-        # ----------------------------------------------------
-
-        if query:
-
-            self.memory_manager.add_user_message(
-                conversation_id=conversation_id,
-                content=query,
-            )
-
-
-        # ----------------------------------------------------
-        # Save assistant message
-        # ----------------------------------------------------
-
-        if answer:
-
-            self.memory_manager.add_assistant_message(
-                conversation_id=conversation_id,
-                content=answer,
-            )
-
-
-        return {}
