@@ -1,86 +1,77 @@
+from __future__ import annotations
+
+import logging
+from typing import Iterable
+
 from chunking.chunk_models import Chunk
+from .agent import MAX_LLM_CALLS_PER_RUN, RiskAgentClient
+from .chunker import convert_chunks, create_batches, extract_global_terms_map
+from .schemas import ContractChunk, FinalRiskAssessment, RiskAssessmentState
+from .workflow import get_risk_assessment_graph
 
-from indexing.bm25_indexer import BM25Indexer
-
-from .chunker import convert_chunks
-from .schemas import FinalRiskAssessment
-from .workflow import build_risk_assessment_graph
+logger = logging.getLogger(__name__)
 
 
-class RiskService:
-    def __init__(self, bm25_indexer=None):
-        self.bm25_indexer = (
-            bm25_indexer or BM25Indexer()
+def _normalize_input_chunks(
+    chunks: Iterable[Chunk | ContractChunk],
+) -> list[ContractChunk]:
+    normalized: list[ContractChunk] = []
+    for item in chunks:
+        if isinstance(item, ContractChunk):
+            normalized.append(item)
+        else:
+            normalized.extend(convert_chunks([item]))
+    return normalized
+
+
+def assess_contract_risks(
+    chunks: Iterable[Chunk | ContractChunk],
+    contract_summary: str = "",
+    model_name: str | None = None,
+    max_llm_calls: int = MAX_LLM_CALLS_PER_RUN,
+) -> FinalRiskAssessment:
+    contract_chunks = _normalize_input_chunks(chunks)
+    if not contract_chunks:
+        return FinalRiskAssessment(
+            risk_level="low",
+            summary="Không có nội dung hợp đồng để đánh giá rủi ro.",
+            issues=[],
+            cross_clause_conflicts=[],
+            recommendations=[],
         )
 
-        self.graph = build_risk_assessment_graph()
+    terms_map = extract_global_terms_map(contract_chunks)
+    batches = create_batches(contract_chunks)
+    graph = get_risk_assessment_graph()
 
-        # Ghi nhớ thời điểm index được đọc.
-        self._index_mtime_ns = None
+    with RiskAgentClient(
+        model_name=model_name,
+        max_calls=max_llm_calls,
+    ) as client:
+        initial_state: dict = {
+            "chunks": contract_chunks,
+            "global_terms_map": terms_map,
+            "contract_summary": contract_summary,
+            "batches": batches,
+            "agent_1_results": [],
+            "agent_2_results": [],
+            "candidate_issues": [],
+            "verified_issues": [],
+            "agent_trace": [],
+            "agent3_tool_calls": 0,
+            "cross_clause_conflicts": [],
+            "_agent_client": client,
+        }
+        final_state: RiskAssessmentState = graph.invoke(initial_state)
 
-    def get_contract_chunks(
-        self,
-        contract_id: str,
-    ) -> list[Chunk]:
-        if not contract_id:
-            raise ValueError(
-                "contract_id is required."
-            )
+    assessment = final_state.get("final_assessment")
+    if isinstance(assessment, FinalRiskAssessment):
+        return assessment
 
-        index_path = self.bm25_indexer.index_path
-
-        if not index_path.exists():
-            raise FileNotFoundError(
-                f"BM25 index not found: {index_path}"
-            )
-
-        current_mtime = index_path.stat().st_mtime_ns
-
-        # Chỉ load khi chưa có index trong RAM
-        # hoặc file index đã thay đổi.
-        if (
-            not self.bm25_indexer.is_ready
-            or self._index_mtime_ns != current_mtime
-        ):
-            self.bm25_indexer.load()
-
-            self._index_mtime_ns = (
-                index_path.stat().st_mtime_ns
-            )
-
-        chunks = [
-            chunk
-            for chunk in self.bm25_indexer.chunks
-            if chunk.metadata.contract_id == contract_id
-        ]
-
-        if not chunks:
-            raise ValueError(
-                f"No chunks found for contract: {contract_id}"
-            )
-
-        return chunks
-
-    def assess(
-        self,
-        contract_id: str,
-    ) -> FinalRiskAssessment:
-        chunks = self.get_contract_chunks(
-            contract_id
-        )
-
-        contract_chunks = convert_chunks(chunks)
-
-        final_state = self.graph.invoke(
-            {"chunks": contract_chunks}
-        )
-
-        result = final_state.get("final_assessment")
-
-        if result is None:
-            raise RuntimeError(
-                "Risk assessment did not produce "
-                "a final assessment."
-            )
-
-        return result
+    return FinalRiskAssessment(
+        risk_level="low",
+        summary="Hoàn tất rà soát nhưng chưa ghi nhận rủi ro pháp lý trực tiếp.",
+        issues=final_state.get("verified_issues") or [],
+        cross_clause_conflicts=final_state.get("cross_clause_conflicts") or [],
+        recommendations=[],
+    )

@@ -1,1601 +1,200 @@
 from __future__ import annotations
 
-import json
-import math
-import os
-import re
-from pathlib import Path
-from functools import lru_cache
-from typing import Any
-from dataclasses import dataclass, field
-
-from dotenv import load_dotenv
-from neo4j import GraphDatabase
-
-from .schemas import LegalReference
-from config.settings import settings
-
 import logging
+import os
+from urllib.parse import urlparse
+
+from tavily import TavilyClient
+
+from config.settings import settings
+from .schemas import (
+    LegalReference,
+    LegalSearchRequest,
+    LegalSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
-# ============================================================
-# CONFIG
-# ============================================================
+DEFAULT_ALLOWED_DOMAINS = [
+    "chinhphu.vn",
+    "thuvienphapluat.vn",
+]
 
-load_dotenv()
+MAX_RESULTS = 3
+MIN_CONTENT_LENGTH = 100
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+_tavily_client: TavilyClient | None = None
+_search_cache: dict[tuple[str, tuple[str, ...], int], LegalSearchResult] = {}
 
-NEO4J_URI = os.getenv("NEO4J_URI")
-NEO4J_USER = os.getenv("NEO4J_USER") or os.getenv("NEO4J_USERNAME")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
-NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
 
-CHUNKS_FILE = Path(
-    os.getenv(
-        "CHUNKS_FILE",
-        str(BASE_DIR / "data" / "chunks.jsonl"),
-    )
-)
+def _get_tavily_api_key() -> str:
+    api_key = getattr(settings, "TAVILY_API_KEY", None) or os.getenv("TAVILY_API_KEY")
+    if not api_key or not str(api_key).strip():
+        raise RuntimeError("Thiếu TAVILY_API_KEY trong cấu hình.")
+    return str(api_key).strip()
 
-_chunks_cache = None
-_chunks_cache_path = None
-_chunks_cache_mtime_ns = None
 
-_chunk_offsets_cache = None
-_chunk_offsets_path = None
-_chunk_offsets_mtime_ns = None
-_chunk_offsets_size = None
+def _get_tavily_client() -> TavilyClient:
+    global _tavily_client
+    if _tavily_client is None:
+        _tavily_client = TavilyClient(api_key=_get_tavily_api_key())
+    return _tavily_client
 
-MAX_ENTITIES = 120
-MAX_RELATIONSHIPS = 10  # Agent 3 chỉ mở rộng tối đa 10 cạnh mỗi lượt search
-MAX_REFERENCES = 8
 
-# Candidate/reranker settings.
-# Model + device are centralized in config.settings so every retrieval
-# pipeline uses the same reranker configuration.
-LEGAL_RERANK_CANDIDATES = settings.LEGAL_RERANK_CANDIDATES
+def _normalize_domain(domain: str) -> str:
+    return domain.lower().strip().rstrip(".")
 
-_shared_reranker = None
 
-
-def set_shared_reranker(reranker):
-    """Đăng ký CrossEncoderReranker được dùng chung toàn ứng dụng."""
-    global _shared_reranker
-    _shared_reranker = reranker
-
-SUPERSESSION_RELATIONS = {"SUPERSEDES", "REPLACES"}
-
-
-@dataclass
-class LegalSearchResult:
-    """Kết quả legal_search tương thích với test và dễ dùng cho Agent 3."""
-    references: list[LegalReference] = field(default_factory=list)
-    search_count: int = 0
-    query: str = ""
-    search_phrases: list[str] = field(default_factory=list)
-    entities: list[dict] = field(default_factory=list)
-    relationships: list[dict] = field(default_factory=list)
-
-    @property
-    def results(self):
-        return self.references
-
-    def __len__(self):
-        return len(self.references)
-
-    def __iter__(self):
-        return iter(self.references)
-
-    def __getitem__(self, index):
-        return self.references[index]
-
-
-
-# ============================================================
-# TEXT HELPERS
-# ============================================================
-
-def _build_chunk_offset_index() -> dict[str, int]:
-    """
-    Tạo index chunk_id -> byte offset.
-
-    Chỉ đọc nội dung từng dòng để lấy ID và vị trí.
-    Không giữ toàn bộ chunks trong RAM.
-    Index được tái sử dụng cho các truy vấn tiếp theo.
-    """
-    global _chunk_offsets_cache
-    global _chunk_offsets_path
-    global _chunk_offsets_mtime_ns
-    global _chunk_offsets_size
-
-    path = Path(CHUNKS_FILE).resolve()
-
-    if not path.exists():
-        raise FileNotFoundError(f"Chunks file not found: {path}")
-
-    stat = path.stat()
-    current_path = str(path)
-    current_mtime_ns = stat.st_mtime_ns
-    current_size = stat.st_size
-
-    if (
-        _chunk_offsets_cache is not None
-        and _chunk_offsets_path == current_path
-        and _chunk_offsets_mtime_ns == current_mtime_ns
-        and _chunk_offsets_size == current_size
-    ):
-        return _chunk_offsets_cache
-
-    offsets = {}
-
-    # Mở ở chế độ binary để byte offset luôn chính xác với seek().
-    with path.open("rb") as f:
-        while True:
-            offset = f.tell()
-            line = f.readline()
-
-            if not line:
-                break
-
-            if not line.strip():
-                continue
-
-            try:
-                item = json.loads(line)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                continue
-
-            chunk_id = item.get("chunk_id") or item.get("id")
-
-            if chunk_id is not None:
-                offsets[str(chunk_id)] = offset
-
-    # Không cache index nếu file thay đổi trong lúc xây dựng.
-    final_stat = path.stat()
-
-    if (
-        final_stat.st_mtime_ns != current_mtime_ns
-        or final_stat.st_size != current_size
-    ):
-        return _build_chunk_offset_index()
-
-    _chunk_offsets_cache = offsets
-    _chunk_offsets_path = current_path
-    _chunk_offsets_mtime_ns = current_mtime_ns
-    _chunk_offsets_size = current_size
-
-    return _chunk_offsets_cache
-
-
-def _load_chunks_by_ids(
-    chunk_ids: set[str] | list[str],
-) -> dict[str, dict]:
-    """
-    Chỉ đọc nội dung của những chunk có ID được yêu cầu.
-
-    Quy trình:
-    1. Lấy byte offset từ index.
-    2. Seek đến từng dòng cần thiết.
-    3. Parse JSON và trả về dict theo chunk_id.
-    """
-    requested_ids = {
-        str(chunk_id)
-        for chunk_id in chunk_ids
-        if chunk_id is not None
-    }
-
-    if not requested_ids:
-        return {}
-
-    offsets = _build_chunk_offset_index()
-    path = Path(CHUNKS_FILE).resolve()
-    result = {}
-
-    with path.open("rb") as f:
-        for chunk_id in requested_ids:
-            offset = offsets.get(chunk_id)
-
-            if offset is None:
-                continue
-
-            f.seek(offset)
-            line = f.readline()
-
-            if not line:
-                continue
-
-            try:
-                item = json.loads(line)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                continue
-
-            actual_id = item.get("chunk_id") or item.get("id")
-
-            if actual_id is not None and str(actual_id) == chunk_id:
-                result[chunk_id] = item
-
-    return result
-
-def normalize_text(text: Any) -> str:
-    if text is None:
-        return ""
-
-    text = str(text).lower()
-    text = re.sub(r"\s+", " ", text)
-
-    return text.strip(" .,;:!?()[]{}\"'")
-
-
-def _clean_phrases(
-    search_phrases: list[str] | None,
-) -> list[str]:
-    phrases = []
-    seen = set()
-
-    for phrase in search_phrases or []:
-        phrase = normalize_text(phrase)
-
-        if len(phrase) < 3:
-            continue
-
-        if phrase in seen:
-            continue
-
-        seen.add(phrase)
-        phrases.append(phrase)
-
-    return phrases
-
-
-def _safe_relationship_types(
-    relationship_types: list[str] | None,
-) -> list[str]:
-    result = []
-
-    for value in relationship_types or []:
-        value = str(value).strip().upper()
-
-        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", value):
-            continue
-
-        if value not in result:
-            result.append(value)
-
-    return result
-
-
-# ============================================================
-# NEO4J
-# ============================================================
-
-
-@lru_cache(maxsize=1)
-def get_neo4j_driver():
-    """Tạo và tái sử dụng một Neo4j Driver trong mỗi worker."""
-
-    if not NEO4J_URI:
-        raise RuntimeError("Thiếu NEO4J_URI.")
-
-    if not NEO4J_USER:
-        raise RuntimeError(
-            "Thiếu NEO4J_USER hoặc NEO4J_USERNAME."
-        )
-
-    if not NEO4J_PASSWORD:
-        raise RuntimeError("Thiếu NEO4J_PASSWORD.")
-
-    return GraphDatabase.driver(
-        NEO4J_URI,
-        auth=(NEO4J_USER, NEO4J_PASSWORD),
-    )
-
-
-def close_neo4j_driver():
-    """Đóng driver dùng chung khi ứng dụng dừng."""
-
-    if get_neo4j_driver.cache_info().currsize > 0:
-        driver = get_neo4j_driver()
-        get_neo4j_driver.cache_clear()
-        driver.close()
-
-
-
-# ============================================================
-# GRAPH SCHEMA CONTEXT
-# ============================================================
-
-
-def _get_graph_schema_with_driver(driver) -> dict:
-    """Đọc schema thực tế được tạo bởi build_graph_v2.py."""
-    with driver.session(database=NEO4J_DATABASE) as session:
-        entity_rows = session.run("""
-            MATCH (e:Entity)
-            WHERE e.type IS NOT NULL
-            RETURN DISTINCT e.type AS entity_type
-            ORDER BY entity_type
-        """)
-        entity_types = [
-            str(row["entity_type"])
-            for row in entity_rows
-            if row.get("entity_type")
-        ]
-
-        relationship_rows = session.run("""
-            MATCH ()-[r]->()
-            RETURN DISTINCT type(r) AS relationship_type
-            ORDER BY relationship_type
-        """)
-        relationship_types = [
-            str(row["relationship_type"])
-            for row in relationship_rows
-            if row.get("relationship_type")
-        ]
-
-    return {
-        "entity_types": entity_types,
-        "relationship_types": relationship_types,
-    }
-
-
-# Cache schema Neo4j trong bộ nhớ của mỗi worker
-_graph_schema_cache = None
-
-
-def _get_cached_graph_schema(driver) -> dict:
-    """
-    Dùng lại schema đã đọc nếu có.
-    Nếu chưa có cache, truy vấn Neo4j bằng driver hiện tại.
-    """
-    global _graph_schema_cache
-
-    if _graph_schema_cache is None:
-        _graph_schema_cache = _get_graph_schema_with_driver(driver)
-
-    # Trả bản sao để caller không vô tình sửa cache gốc
-    return {
-        "entity_types": list(_graph_schema_cache["entity_types"]),
-        "relationship_types": list(
-            _graph_schema_cache["relationship_types"]
-        ),
-    }
-
-
-def clear_graph_schema_cache() -> None:
-    """
-    Gọi hàm này nếu schema Neo4j thay đổi khi ứng dụng đang chạy.
-    Lần truy vấn tiếp theo sẽ đọc lại schema.
-    """
-    global _graph_schema_cache
-    _graph_schema_cache = None
-
-
-
-
-# ============================================================
-# ENTITY SEARCH
-# ============================================================
-
-
-def _search_entities_with_driver(
-    driver,
-    search_phrases: list[str],
-    entity_types: list[str] | None = None,
-    limit: int | None = None,
-    top_k: int | None = None,
-) -> list[dict]:
-    """
-    Tìm Entity theo nhiều phrase và ưu tiên entity match nhiều phrase.
-
-    Điểm quan trọng so với bản cũ:
-    - Không LIMIT ngay sau từng phrase rồi mới cắt kết quả.
-    - Tính score trên toàn bộ phrase của từng entity.
-    - Entity match nhiều phrase được cộng điểm coverage.
-    - Giữ entity type bonus nếu Agent cung cấp type.
-
-    Mục đích là tăng recall ở bước candidate; ranking cuối cùng vẫn
-    được thực hiện trên chunk trong ``_rank_references``.
-    """
-
-    phrases = _clean_phrases(search_phrases)
-
-    if not phrases:
-        return []
-
-    entity_types = [
-        str(item).strip().upper()
-        for item in (entity_types or [])
-        if str(item).strip()
-    ]
-
-    requested_limit = top_k if top_k is not None else limit
-    if requested_limit is None:
-        requested_limit = MAX_ENTITIES
-
-    limit = min(
-        max(int(requested_limit), 1),
-        MAX_ENTITIES,
-    )
-
-    query = """
-    UNWIND $search_phrases AS phrase
-
-    MATCH (e:Entity)
-
-    WITH
-        e,
-        phrase,
-        toLower(coalesce(e.text, "")) AS text,
-        toLower(coalesce(e.normalized_text, "")) AS normalized,
-        toLower(coalesce(e.description, "")) AS description
-
-    WITH
-        e,
-        phrase,
-        CASE
-            WHEN text = phrase THEN 30 + size(phrase) * 0.8
-            WHEN text CONTAINS phrase THEN 20 + size(phrase) * 0.6
-            ELSE 0
-        END AS text_score,
-        CASE
-            WHEN normalized = phrase THEN 25 + size(phrase) * 0.7
-            WHEN normalized CONTAINS phrase THEN 16 + size(phrase) * 0.5
-            ELSE 0
-        END AS normalized_score,
-        CASE
-            WHEN description CONTAINS phrase THEN 4
-            ELSE 0
-        END AS description_score
-
-    WITH
-        e,
-        phrase,
-        text_score
-        + normalized_score
-        + description_score AS phrase_score,
-        (text_score > 0 OR normalized_score > 0) AS matched
-
-    WITH
-        e,
-        collect({
-            phrase: phrase,
-            score: phrase_score,
-            matched: matched
-        }) AS matches
-
-    WITH
-        e,
-        matches,
-        reduce(
-            total = 0.0,
-            item IN matches |
-            total + item.score
-        ) AS total_score,
-        reduce(
-            best = 0.0,
-            item IN matches |
-            CASE
-                WHEN item.score > best THEN item.score
-                ELSE best
-            END
-        ) AS best_score,
-        size([item IN matches WHERE item.matched]) AS matched_count
-
-    WITH
-        e,
-        matches,
-        best_score
-        + total_score * 0.15
-        + CASE
-            WHEN matched_count >= 3 THEN 32
-            WHEN matched_count = 2 THEN 18
-            ELSE 0
-          END AS base_score,
-        matched_count
-
-    WITH
-        e,
-        matches,
-        base_score
-        + CASE
-            WHEN e.type IN $entity_types
-                 AND matched_count > 0
-            THEN 10
-            ELSE 0
-          END AS score,
-        matched_count
-
-    WHERE matched_count > 0
-
-    RETURN
-        e.entity_id AS entity_id,
-        e.chunk_ids AS chunk_ids,
-        e.document_ids AS document_ids,
-        e.occurrence_count AS occurrence_count,
-        e.text AS text,
-        e.normalized_text AS normalized_text,
-        e.type AS type,
-        e.description AS description,
-        [item IN matches WHERE item.matched | item.phrase] AS matched_phrases,
-        matched_count AS phrase_coverage,
-        score AS score
-
-    ORDER BY
-        score DESC,
-        phrase_coverage DESC
-    LIMIT $limit
-    """
-
-    with driver.session(database=NEO4J_DATABASE) as session:
-        result = session.run(
-            query,
-            search_phrases=phrases,
-            entity_types=entity_types,
-            limit=limit,
-        )
-
-        rows = [dict(record) for record in result]
-
-    unique = {}
-
-    for row in rows:
-        entity_id = row.get("entity_id")
-
-        if not entity_id:
-            continue
-
-        old = unique.get(entity_id)
-
-        if old is None or float(row.get("score") or 0) > float(
-            old.get("score") or 0
-        ):
-            unique[entity_id] = row
-
-    return sorted(
-        unique.values(),
-        key=lambda item: (
-            float(item.get("score") or 0),
-            int(item.get("phrase_coverage") or 0),
-        ),
-        reverse=True,
-    )[:limit]
-
-
-def get_graph_schema_context(
-    search_phrases: list[str] | None = None,
-    max_entities: int = 20,
-    max_relationships: int = 30,
-) -> dict:
-    """
-    Context cho Agent 3:
-    - Toàn bộ Entity.type và relationship type đang có trong DB.
-    - Một nhóm Entity khớp với risk hiện tại.
-
-    Sử dụng Neo4j Driver dùng chung, không đóng Driver sau truy vấn.
-    """
-    driver = get_neo4j_driver()
-
-    schema = _get_cached_graph_schema(driver)
-
-    phrases = _clean_phrases(search_phrases)
-
-    entities = (
-        _search_entities_with_driver(
-            driver=driver,
-            search_phrases=phrases,
-            entity_types=[],
-            limit=max(1, min(int(max_entities), MAX_ENTITIES)),
-        )
-        if phrases
-        else []
-    )
-
-    compact_entities = []
-
-    for item in entities:
-        compact_entities.append({
-            "entity_id": item.get("entity_id"),
-            "text": item.get("text"),
-            "normalized_text": item.get("normalized_text"),
-            "type": item.get("type"),
-            "description": (item.get("description") or "")[:240],
-            "chunk_ids": (item.get("chunk_ids") or [])[:8],
-            "score": item.get("score"),
-        })
-
-    return {
-        **schema,
-        "matched_entities": compact_entities,
-        "matched_relationships": [],
-    }
-
-
-def search_entities(
-    search_phrases: list[str] | None = None,
-    entity_types: list[str] | None = None,
-    top_k: int | None = None,
-    driver=None,
-    limit: int | None = None,
-) -> list[dict]:
-    """
-    Public entity-search API.
-
-    Nếu không truyền driver, sử dụng Neo4j Driver dùng chung.
-    Không đóng Driver sau mỗi lần tìm kiếm.
-    """
-    if driver is None:
-        driver = get_neo4j_driver()
-
-    requested_limit = top_k if top_k is not None else limit
-
-    if requested_limit is None:
-        requested_limit = MAX_ENTITIES
-
-    return _search_entities_with_driver(
-        driver=driver,
-        search_phrases=search_phrases or [],
-        entity_types=entity_types or [],
-        limit=requested_limit,
-    )
-
-
-# ============================================================
-# RELATIONSHIP SEARCH
-# ============================================================
-
-
-def _search_relationships_with_driver(
-    driver,
-    entity_ids: list[str] | None = None,
-    relationship_types: list[str] | None = None,
-    limit: int | None = None,
-    top_k: int | None = None,
-    search_phrases: list[str] | None = None,
-) -> list[dict]:
-    """
-    Lấy relationship quanh các Entity đã tìm được.
-
-    Logic tương đương nodes.py nhưng dùng entity_id vì DB hiện tại
-    không có node_id.
-
-    Relationship type lấy bằng type(r), không dùng r.relation.
-    """
-
-    # Test có thể truyền search_phrases thay vì entity_ids.
-    # Khi đó dùng chính entity search logic để lấy entity IDs trước.
-    if not entity_ids and search_phrases:
-        matched_entities = _search_entities_with_driver(
-            driver=driver,
-            search_phrases=search_phrases,
-            entity_types=[],
-            top_k=MAX_ENTITIES,
-        )
-        entity_ids = [
-            item.get("entity_id")
-            for item in matched_entities
-            if item.get("entity_id")
-        ]
-
-    entity_ids = [
-        str(item)
-        for item in entity_ids or []
-        if item
-    ]
-
-    if not entity_ids:
-        return []
-
-    safe_types = _safe_relationship_types(
-        relationship_types
-    )
-
-    # Không có type được Agent 3 chọn thì không mở rộng toàn bộ graph.
-    # Entity search và lexical fallback vẫn tiếp tục ở legal_search.
-    if not safe_types:
-        return []
-
-    rel_pattern = ":" + "|".join(safe_types)
-
-    requested_limit = top_k if top_k is not None else limit
-    if requested_limit is None:
-        requested_limit = MAX_RELATIONSHIPS
-
-    limit = min(
-        max(int(requested_limit), 1),
-        MAX_RELATIONSHIPS,
-    )
-
-    query = f"""
-    UNWIND $entity_ids AS entity_id
-
-    MATCH (e:Entity {{entity_id: entity_id}})
-          -[r{rel_pattern}]-(other:Entity)
-
-    WITH DISTINCT e, r, other
-
-    WITH e, r, other,
-        reduce(
-            score = 0.0,
-            phrase IN $search_phrases |
-            score + CASE
-                WHEN toLower(coalesce(r.evidence, "")) CONTAINS phrase THEN 3.0
-                WHEN any(item IN coalesce(r.evidence_list, [])
-                         WHERE toLower(item) CONTAINS phrase) THEN 3.0
-                WHEN toLower(coalesce(other.text, "")) CONTAINS phrase THEN 2.0
-                WHEN toLower(coalesce(e.text, "")) CONTAINS phrase THEN 1.0
-                ELSE 0.0
-            END
-        ) AS relevance
-
-    RETURN
-        e.entity_id AS source_entity_id,
-        e.chunk_ids AS source_chunk_ids,
-        e.document_ids AS source_document_ids,
-        e.text AS source_text,
-        e.type AS source_type,
-
-        type(r) AS relation,
-
-        other.entity_id AS target_entity_id,
-        other.chunk_ids AS target_chunk_ids,
-        other.document_ids AS target_document_ids,
-        other.text AS target_text,
-        other.type AS target_type,
-
-        r.relationship_id AS relationship_id,
-        r.chunk_ids AS relationship_chunk_ids,
-        r.document_ids AS relationship_document_ids,
-        r.evidence AS evidence,
-        r.evidence_list AS evidence_list,
-        r.provenance_json AS provenance_json
-
-    ORDER BY relevance DESC, coalesce(r.provenance_count, 0) DESC
-    LIMIT $limit
-    """
-
-    with driver.session(database=NEO4J_DATABASE) as session:
-        result = session.run(
-            query,
-            entity_ids=entity_ids,
-            search_phrases=_clean_phrases(search_phrases),
-            limit=limit,
-        )
-
-        return [dict(record) for record in result]
-
-
-def search_relationships(
-    search_phrases: list[str] | None = None,
-    relationship_types: list[str] | None = None,
-    top_k: int | None = None,
-    entity_ids: list[str] | None = None,
-    driver=None,
-    limit: int | None = None,
-) -> list[dict]:
-    """
-    Public relationship-search API.
-
-    Nếu không truyền driver, sử dụng Neo4j Driver dùng chung.
-    Không đóng Driver sau mỗi lần tìm kiếm.
-    """
-    if driver is None:
-        driver = get_neo4j_driver()
-
-    requested_limit = top_k if top_k is not None else limit
-
-    if requested_limit is None:
-        requested_limit = MAX_RELATIONSHIPS
-
-    return _search_relationships_with_driver(
-        driver=driver,
-        entity_ids=entity_ids,
-        relationship_types=relationship_types or [],
-        limit=requested_limit,
-        search_phrases=search_phrases,
-        top_k=requested_limit,
-    )
-
-
-# ============================================================
-# CHUNK LEXICAL FALLBACK
-# ============================================================
-
-
-def _lexical_chunk_candidates(
-    chunks: dict[str, dict],
-    search_phrases: list[str],
-    limit: int = 40,
-) -> list[tuple[str, float]]:
-    """
-    Fallback trực tiếp trên chunks.jsonl.
-
-    Mục đích: nếu extraction chưa tạo Entity/Relationship cho một điều
-    khoản quan trọng, retrieval vẫn có đường lui để lấy đúng chunk.
-
-    Đây chỉ là candidate generation; ranking cuối vẫn chạy qua
-    _rank_references().
-    """
-
-    phrases = _clean_phrases(search_phrases)
-    if not phrases:
-        return []
-
-    # Tính độ hiếm của phrase trên toàn bộ corpus thay vì hardcode
-    # một danh sách từ "generic" theo từng lĩnh vực.
-    phrase_document_frequency = {phrase: 0 for phrase in phrases}
-    total_documents = 0
-
-    for data in chunks.values():
-        content = normalize_text(data.get("content") or "")
-        title = normalize_text(data.get("title") or "")
-        if not content:
-            continue
-        total_documents += 1
-        for phrase in phrases:
-            if phrase in content or phrase in title:
-                phrase_document_frequency[phrase] += 1
-
-    total_documents = max(total_documents, 1)
-
-    scored = []
-
-    for chunk_id, data in chunks.items():
-        content = normalize_text(data.get("content") or "")
-        title = normalize_text(data.get("title") or "")
-
-        if not content:
-            continue
-
-        score = 0.0
-        coverage = 0
-
-        for phrase in phrases:
-            if not phrase:
-                continue
-
-            # IDF-like weight: phrase xuất hiện càng ít trong corpus thì
-            # càng có giá trị phân biệt, hoàn toàn độc lập với domain.
-            df = phrase_document_frequency.get(phrase, 0)
-            rarity = 1.0 + math.log((total_documents + 1) / (df + 1))
-            weight = min(8.0 + len(phrase) * 0.7, 24.0) * rarity
-
-            if phrase in content:
-                score += 25.0 + weight
-                coverage += 1
-
-            if phrase in title:
-                score += 20.0 + weight
-
-        if coverage == 0:
-            continue
-
-        if coverage >= 3:
-            score += 60.0
-        elif coverage == 2:
-            score += 38.0
-
-        scored.append((chunk_id, score, coverage))
-
-    scored.sort(
-        key=lambda item: (
-            item[1],
-            item[2],
-        ),
-        reverse=True,
-    )
-
-    return [
-        (chunk_id, score)
-        for chunk_id, score, _ in scored[:limit]
-    ]
-
-# ============================================================
-# DOCUMENT STATUS / SUPERSESSION
-# ============================================================
-
-
-def _get_superseded_document_ids(driver) -> set[str]:
-    """Lấy document_ids từ Entity occurrence arrays theo schema build_graph_v2."""
-    query = """
-    MATCH (new:Entity)-[r]->(old:Entity)
-    WHERE type(r) IN ['SUPERSEDES', 'REPLACES']
-    UNWIND coalesce(old.document_ids, []) AS old_document_id
-    RETURN DISTINCT old_document_id AS document_id
-    """
-
+def _is_allowed_url(
+    url: str,
+    allowed_domains: list[str],
+) -> bool:
     try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            return {
-                str(record["document_id"])
-                for record in session.run(query)
-                if record.get("document_id")
-            }
-    except Exception as exc:
-        # Supersession chỉ là tín hiệu xếp hạng phụ; không làm hỏng retrieval.
-        print(f"[Legal Search] Không đọc được supersession metadata: {exc}")
-        return set()
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
 
+        hostname = parsed.hostname
+        if not hostname:
+            return False
 
-def _document_status_bonus(
-    reference: LegalReference,
-    superseded_document_ids: set[str],
-    chunks: dict[str, dict],
-) -> float:
-    """
-    Tín hiệu generic dựa trên metadata trạng thái của document.
-
-    Không phụ thuộc lĩnh vực, loại nghĩa vụ hay nội dung query.
-    """
-
-    data = chunks.get(reference.chunk_id, {})
-    document_id = str(data.get("document_id") or "")
-
-    if document_id and document_id in superseded_document_ids:
-        return -90.0
-
-    status = normalize_text(
-        data.get("status")
-        or data.get("document_status")
-        or data.get("legal_status")
-        or ""
-    )
-
-    if any(
-        term in status
-        for term in (
-            "đã hết hiệu lực",
-            "hết hiệu lực",
-            "bị thay thế",
-            "được thay thế",
-            "superseded",
-            "repealed",
+        hostname = _normalize_domain(hostname)
+        return any(
+            hostname == _normalize_domain(domain)
+            or hostname.endswith("." + _normalize_domain(domain))
+            for domain in allowed_domains
         )
-    ):
-        return -100.0
-
-    if any(
-        term in status
-        for term in (
-            "còn hiệu lực",
-            "đang hiệu lực",
-            "effective",
-            "current",
-            "active",
-        )
-    ):
-        return 25.0
-
-    return 0.0
+    except (ValueError, AttributeError):
+        return False
 
 
-# ============================================================
-# CHUNKS
-# ============================================================
+def _get_allowed_domains(
+    request: LegalSearchRequest,
+) -> list[str]:
+    allowed = {_normalize_domain(domain) for domain in DEFAULT_ALLOWED_DOMAINS}
+
+    selected: list[str] = []
+    for domain in request.allowed_domains:
+        norm = _normalize_domain(domain)
+        if norm in allowed and norm not in selected:
+            selected.append(norm)
+
+    return selected
 
 
-def load_chunks_file() -> dict[str, dict]:
-    """Backward-compatible alias used by the Neo4j test module."""
-    return load_chunks()
+def _create_reference(item: dict) -> LegalReference:
+    url = (item.get("url") or "").strip()
+    content = (item.get("content") or "").strip()
+    title = (item.get("title") or "").strip()
 
+    parsed = urlparse(url)
+    domain = parsed.hostname or ""
+    normalized_domain = _normalize_domain(domain)
 
-
-def load_chunks() -> dict[str, dict]:
-    global _chunks_cache
-    global _chunks_cache_path
-    global _chunks_cache_mtime_ns
-
-    path = Path(CHUNKS_FILE).resolve()
-
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Chunks file not found: {path}"
-        )
-
-    current_path = str(path)
-    current_mtime_ns = path.stat().st_mtime_ns
-
-    # Cache còn hợp lệ: không đọc file lần nữa
-    if (
-        _chunks_cache is not None
-        and _chunks_cache_path == current_path
-        and _chunks_cache_mtime_ns == current_mtime_ns
-    ):
-        return _chunks_cache
-
-    # Đọc lại khi chưa có cache hoặc file đã thay đổi
-    chunks = {}
-
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-
-            if not line:
-                continue
-
-            item = json.loads(line)
-
-            # Giữ nguyên định dạng ID của dữ liệu hiện tại
-            chunk_id = item.get("chunk_id") or item.get("id")
-
-            if chunk_id is not None:
-                chunks[str(chunk_id)] = item
-
-    # Chỉ cập nhật cache nếu file không đổi trong lúc đọc
-    final_mtime_ns = path.stat().st_mtime_ns
-
-    if final_mtime_ns != current_mtime_ns:
-        # File đã đổi trong lúc đọc, thử đọc lại
-        return load_chunks()
-
-    _chunks_cache = chunks
-    _chunks_cache_path = current_path
-    _chunks_cache_mtime_ns = final_mtime_ns
-
-    return _chunks_cache
-
-
-# ============================================================
-# REFERENCES
-# ============================================================
-
-
-def _build_reference(
-    chunk_id: str,
-    data: dict,
-    score: float = 0.0,
-) -> LegalReference:
     return LegalReference(
-        chunk_id=chunk_id,
-        title=data.get("title", ""),
-        article=(
-            data.get("article")
-            or data.get("article_number")
+        title=title,
+        url=url,
+        snippet=content[:500],
+        content=content,
+        domain=domain,
+        published_date=None,
+        effective_date=None,
+        is_official_source=(
+            normalized_domain == "chinhphu.vn"
+            or normalized_domain.endswith(".chinhphu.vn")
         ),
-        clause=(
-            data.get("clause")
-            or data.get("clause_number")
-        ),
-        point=(
-            data.get("point")
-            or data.get("point_number")
-        ),
-        content=data.get("content", ""),
-        score=float(score),
     )
 
 
-def _rank_references(
-    references: list[LegalReference],
-    search_phrases: list[str],
-    chunks: dict[str, dict] | None = None,
-    superseded_document_ids: set[str] | None = None,
-) -> list[LegalReference]:
-    """
-    Xếp hạng candidate references bằng các tín hiệu retrieval tổng quát.
+def clear_legal_search_cache() -> None:
+    _search_cache.clear()
 
-    Không chứa rule riêng cho bất kỳ lĩnh vực hoặc loại query nào.
-    Các tín hiệu gồm:
-    - entity score từ Neo4j;
-    - exact phrase match trong content/title;
-    - độ hiếm của phrase trong tập candidate (IDF-like);
-    - coverage của nhiều phrase;
-    - độ dài/specificity của phrase;
-    - metadata trạng thái/supersession của document.
 
-    Đây là candidate ranking, không phải semantic/legal reasoning.
-    """
-    phrases = _clean_phrases(search_phrases)
-    chunks = chunks or {}
-    superseded_document_ids = superseded_document_ids or set()
-
-    if not phrases:
-        return references
-
-    # Tính độ hiếm phrase trên candidate set. Không có vocabulary hardcode.
-    document_frequency = {phrase: 0 for phrase in phrases}
-    total_candidates = 0
-
-    for reference in references:
-        content = normalize_text(reference.content)
-        title = normalize_text(reference.title)
-        if not content and not title:
-            continue
-
-        total_candidates += 1
-        for phrase in phrases:
-            if phrase in content or phrase in title:
-                document_frequency[phrase] += 1
-
-    total_candidates = max(total_candidates, 1)
-
-    ranked = []
-
-    for reference in references:
-        content = normalize_text(reference.content)
-        title = normalize_text(reference.title)
-
-        entity_score = float(reference.score or 0.0)
-        base_score = entity_score * 0.35
-        lexical_score = 0.0
-        matched_count = 0
-        matched_lengths = []
-
-        for phrase in phrases:
-            phrase_tokens = re.findall(r"\w+", phrase, flags=re.UNICODE)
-            token_count = max(len(phrase_tokens), 1)
-
-            # Phrase dài/mang nhiều token có tính phân biệt tự nhiên cao hơn.
-            specificity = min(8.0 + token_count * 4.0 + len(phrase) * 0.15, 28.0)
-
-            df = document_frequency.get(phrase, 0)
-            idf = 1.0 + math.log((total_candidates + 1) / (df + 1))
-
-            if phrase in content:
-                lexical_score += (24.0 + specificity) * idf
-                matched_count += 1
-                matched_lengths.append(len(phrase))
-
-            if phrase in title:
-                lexical_score += (14.0 + specificity * 0.6) * idf
-
-        coverage_ratio = matched_count / len(phrases)
-        coverage_bonus = coverage_ratio * 30.0
-
-        # Match ở phần đầu chunk thường hữu ích vì nhiều chunk có heading/
-        # mô tả điều khoản trước nội dung chi tiết. Đây vẫn là heuristic
-        # vị trí tổng quát, không phụ thuộc vocabulary pháp lý.
-        prefix_bonus = 0.0
-        first_part = content[:300]
-        for phrase in phrases:
-            if phrase in first_part:
-                prefix_bonus += 8.0
-
-        status_bonus = _document_status_bonus(
-            reference=reference,
-            superseded_document_ids=superseded_document_ids,
-            chunks=chunks,
+def legal_search(request: LegalSearchRequest) -> LegalSearchResult:
+    query = request.query.strip()
+    if not query:
+        return LegalSearchResult(
+            query="",
+            errors=["Truy vấn tìm kiếm đang trống."],
         )
 
-        score = (
-            base_score
-            + lexical_score
-            + coverage_bonus
-            + prefix_bonus
-            + status_bonus
+    allowed_domains = _get_allowed_domains(request)
+    if not allowed_domains:
+        return LegalSearchResult(
+            query=query,
+            errors=["Không có domain nào được phép tìm kiếm."],
         )
 
-        reference.score = round(score, 3)
-
-        if matched_count > 0 or entity_score > 0:
-            ranked.append(
-                (
-                    reference,
-                    matched_count,
-                    max(matched_lengths or [0]),
-                )
-            )
-
-    ranked.sort(
-        key=lambda item: (
-            item[0].score,
-            item[1],
-            item[2],
-        ),
-        reverse=True,
+    max_results = min(request.max_results, MAX_RESULTS)
+    cache_key = (
+        " ".join(query.lower().split()),
+        tuple(allowed_domains),
+        max_results,
     )
+    cached = _search_cache.get(cache_key)
+    if cached is not None:
+        logger.info("[LegalSearch] Cache hit for query=%r", query)
+        return cached
 
-    return [item[0] for item in ranked]
+    references: list[LegalReference] = []
+    errors: list[str] = []
+    search_count = 0
 
-
-# ============================================================
-# SEMANTIC RERANKING
-# ============================================================
-
-@lru_cache(maxsize=1)
-def _get_legal_reranker():
-    """
-    Lazy-load CrossEncoder so importing legal_tools does not immediately
-    load a large ML model.
-
-    Model và device được lấy trực tiếp từ config.settings để dùng chung
-    với các pipeline khác của project.
-    """
     try:
-        from sentence_transformers import CrossEncoder
-    except ImportError as exc:
-        raise RuntimeError(
-            "Chưa cài sentence-transformers. Cài bằng: "
-            "pip install sentence-transformers"
-        ) from exc
-
-    return CrossEncoder(
-        settings.RERANKER_MODEL,
-        device=settings.RERANKER_DEVICE,
-        max_length=settings.RERANKER_MAX_LENGTH,
-    )
-
-
-
-def _reference_rerank_text(reference: LegalReference) -> str:
-    """Build the text seen by the semantic reranker."""
-    parts = []
-
-    if reference.title:
-        parts.append(str(reference.title))
-
-    if reference.article:
-        parts.append(str(reference.article))
-
-    if reference.clause:
-        parts.append(str(reference.clause))
-
-    if reference.point:
-        parts.append(str(reference.point))
-
-    if reference.content:
-        parts.append(str(reference.content))
-
-    return "\n".join(parts).strip()
-
-
-def _semantic_rerank(
-    query: str,
-    references: list[LegalReference],
-    top_k: int,
-) -> list[LegalReference]:
-    """
-    Semantic reranking trên một candidate set nhỏ.
-
-    Retrieval/ranking phía trước chịu trách nhiệm recall.
-    CrossEncoder chỉ chịu trách nhiệm sắp xếp lại candidate theo mức
-    liên quan giữa toàn bộ query và toàn bộ chunk.
-    """
-    if not references or not query.strip():
-        return references[:top_k]
-
-    if _shared_reranker is None:
-        raise RuntimeError(
-            "Shared reranker chưa được khởi tạo. "
-            "Hãy kiểm tra FastAPI lifespan."
+        client = _get_tavily_client()
+        response = client.search(
+            query=query,
+            search_depth="basic",
+            max_results=max_results,
+            include_domains=allowed_domains,
+            include_answer=False,
         )
 
-    pairs = [
-        (query, _reference_rerank_text(reference))
-        for reference in references
-    ]
+        raw_results = response.get("results", [])
+        search_count = len(raw_results)
 
-    scores = _shared_reranker.model.predict(
-            pairs,
-            show_progress_bar=False,
+        for item in raw_results:
+            url = (item.get("url") or "").strip()
+            if not _is_allowed_url(url, allowed_domains):
+                logger.warning("[LegalSearch] Rejected URL: %s", url)
+                continue
+
+            content = (item.get("content") or "").strip()
+            if len(content) < MIN_CONTENT_LENGTH:
+                logger.info(
+                    "[LegalSearch] Skipped short content: %s (%d chars)",
+                    url,
+                    len(content),
+                )
+                continue
+
+            try:
+                references.append(_create_reference(item))
+            except Exception:
+                logger.exception(
+                    "[LegalSearch] Could not create reference: %s",
+                    url,
+                )
+
+        logger.info(
+            "[LegalSearch] query=%r search_count=%d references=%d",
+            query,
+            search_count,
+            len(references),
         )
 
-    scored = []
+    except Exception as exc:
+        logger.exception("[LegalSearch] Tavily search failed")
+        errors.append(f"Tavily search failed: {type(exc).__name__}: {exc}")
 
-    for reference, semantic_score in zip(references, scores):
-        try:
-            value = float(semantic_score)
-        except (TypeError, ValueError):
-            value = float("-inf")
-
-        scored.append((reference, value))
-
-    scored.sort(
-        key=lambda item: item[1],
-        reverse=True,
+    result = LegalSearchResult(
+        query=query,
+        references=references,
+        search_count=search_count,
+        errors=errors,
     )
 
-    # Semantic score là score cuối của bước reranking.
-    # Không cộng các điểm keyword cũ vào đây để tránh một lexical hit
-    # mạnh đánh bại relevance ngữ nghĩa.
-    result = []
-
-    for reference, semantic_score in scored[:top_k]:
-        reference.score = round(semantic_score, 6)
-        result.append(reference)
+    if not errors:
+        _search_cache[cache_key] = result
 
     return result
-
-
-# ============================================================
-# LEGAL SEARCH
-# ============================================================
-
-
-def legal_search(
-    query: str,
-    search_phrases: list[str],
-    entity_types: list[str] | None = None,
-    relationship_types: list[str] | None = None,
-    top_k: int = 5,
-    relationship_top_k: int = 10,
-    rerank: bool | None = None,
-    rerank_candidates: int | None = None,
-) -> LegalSearchResult:
-    """
-    Legal retrieval tool cho Agent.
-
-    Flow:
-
-        search_phrases
-              ↓
-        Neo4j Entity search
-              ↓
-        Entity IDs
-              ↓
-        Relationship search
-              ↓
-        candidate chunk IDs
-              ↓
-        chunks.jsonl
-              ↓
-        rank references
-              ↓
-        top_k LegalReference
-
-    Tool chỉ RETRIEVE.
-    Không kết luận hợp đồng có vi phạm pháp luật hay không.
-    """
-
-    phrases = _clean_phrases(search_phrases)
-
-    # Nếu Agent không tạo search phrase thì dùng query.
-    if not phrases and query:
-        phrases = _clean_phrases([query])
-
-    if not phrases:
-        return LegalSearchResult(query=query, search_phrases=phrases)
-
-    top_k = min(
-        max(int(top_k), 1),
-        MAX_REFERENCES,
-    )
-
-    chunks = {}
-    driver = get_neo4j_driver()
-    superseded_document_ids = set()
-
-   
-    graph_schema = _get_cached_graph_schema(driver)
-    valid_entity_types = set(graph_schema["entity_types"])
-    valid_relationship_types = set(graph_schema["relationship_types"])
-
-    # Chỉ sử dụng type thực sự tồn tại trong database.
-    requested_entity_types = [
-        str(item).strip()
-        for item in (entity_types or [])
-        if str(item).strip() in valid_entity_types
-    ]
-    requested_relationship_types = [
-        item for item in _safe_relationship_types(relationship_types)
-        if item in valid_relationship_types
-    ]
-
-    entities = _search_entities_with_driver(
-        driver=driver,
-        search_phrases=phrases,
-        entity_types=requested_entity_types,
-        limit=MAX_ENTITIES,
-    )
-
-    entity_ids = [
-        entity.get("entity_id")
-        for entity in entities
-        if entity.get("entity_id")
-    ]
-
-    relationships = _search_relationships_with_driver(
-        driver=driver,
-        entity_ids=entity_ids,
-        relationship_types=requested_relationship_types,
-        top_k=min(max(int(relationship_top_k), 1), MAX_RELATIONSHIPS),
-        search_phrases=phrases,
-    )
-
-    superseded_document_ids = _get_superseded_document_ids(
-        driver=driver,
-    )
-
-    
-
-    # --------------------------------------------------------
-    # Candidate chunk IDs (Entity/Relationship lưu mảng chunk_ids)
-    # --------------------------------------------------------
-
-    candidate_chunk_ids = set()
-    chunk_scores = {}
-
-    def add_chunk_scores(chunk_ids, score):
-        for value in chunk_ids or []:
-            if not value:
-                continue
-            chunk_id = str(value)
-            candidate_chunk_ids.add(chunk_id)
-            chunk_scores[chunk_id] = max(
-                chunk_scores.get(chunk_id, 0.0),
-                float(score or 0.0),
-            )
-
-    for entity in entities:
-        add_chunk_scores(
-            entity.get("chunk_ids"),
-            entity.get("score"),
-        )
-
-    for relationship in relationships:
-        # Source/target chunk arrays là occurrences của hai Entity.
-        add_chunk_scores(
-            relationship.get("source_chunk_ids"),
-            float(relationship.get("score") or 0.0),
-        )
-        add_chunk_scores(
-            relationship.get("target_chunk_ids"),
-            float(relationship.get("score") or 0.0),
-        )
-        add_chunk_scores(
-            relationship.get("relationship_chunk_ids"),
-            float(relationship.get("score") or 0.0),
-        )
-
-    # --------------------------------------------------------
-    # Lexical fallback
-    # --------------------------------------------------------
-    
-
-    if not candidate_chunk_ids:
-        return LegalSearchResult(
-            query=query,
-            search_phrases=phrases,
-            entities=entities,
-            relationships=relationships,
-        )
-
-    # Relationship evidence chứa phrase thì cộng nhẹ điểm cho các chunk
-    # provenance; relationship không tự tạo kết luận pháp lý.
-    for relationship in relationships:
-        evidence_values = relationship.get("evidence_list") or []
-        if relationship.get("evidence"):
-            evidence_values = [relationship["evidence"], *evidence_values]
-        evidence_text = normalize_text(" ".join(map(str, evidence_values)))
-
-        if not evidence_text or not any(
-            phrase in evidence_text for phrase in phrases
-        ):
-            continue
-
-        relation = str(relationship.get("relation") or "").upper()
-        relation_bonus = 6.0
-        if relation in set(requested_relationship_types):
-            relation_bonus += 4.0
-
-        for chunk_id in (relationship.get("relationship_chunk_ids") or []):
-            if not chunk_id:
-                continue
-            chunk_id = str(chunk_id)
-            candidate_chunk_ids.add(chunk_id)
-            chunk_scores[chunk_id] = chunk_scores.get(chunk_id, 0.0) + relation_bonus
-
-    # --------------------------------------------------------
-    # Load only graph-linked chunks
-    # --------------------------------------------------------
-    logger.info(
-        "[RETRIEVAL DEBUG] query=%r | entities=%d | "
-        "relationships=%d | candidate_chunk_ids=%d",
-        query,
-        len(entities),
-        len(relationships),
-        len(candidate_chunk_ids),
-    )
-
-    chunks = _load_chunks_by_ids(candidate_chunk_ids)
-
-    logger.info(
-    "[RETRIEVAL DEBUG] loaded_chunks=%d",
-    len(chunks),
-)
-
-    if not chunks:
-        return LegalSearchResult(
-            query=query,
-            search_phrases=phrases,
-            entities=entities,
-            relationships=relationships,
-        )
-
-    # --------------------------------------------------------
-    # Build references from retrieved chunks
-    # --------------------------------------------------------
-
-    references = []
-
-    for chunk_id in candidate_chunk_ids:
-        data = chunks.get(chunk_id)
-
-        if data is None:
-            continue
-
-        references.append(
-            _build_reference(
-                chunk_id=chunk_id,
-                data=data,
-                score=chunk_scores.get(chunk_id, 0.0),
-            )
-        )
-
-
-
-    # --------------------------------------------------------
-    # Rank
-    # --------------------------------------------------------
-
-    references = _rank_references(
-        references=references,
-        search_phrases=phrases,
-        chunks=chunks,
-        superseded_document_ids=superseded_document_ids,
-    )
-
-    # --------------------------------------------------------
-    # Dedupe
-    # --------------------------------------------------------
-
-    unique = {}
-
-    for reference in references:
-        old = unique.get(reference.chunk_id)
-
-        if (
-            old is None
-            or reference.score > old.score
-        ):
-            unique[reference.chunk_id] = reference
-
-    references = sorted(
-        unique.values(),
-        key=lambda item: item.score,
-        reverse=True,
-    )
-
-    # --------------------------------------------------------
-    # Semantic reranking
-    # --------------------------------------------------------
-    # Chỉ rerank một candidate set nhỏ để kiểm soát latency.
-    # Nếu tắt rerank thì legal_search vẫn hoạt động như candidate retriever.
-
-    # Mặc định dùng reranker đã cấu hình trong config.settings.
-    # Caller vẫn có thể truyền rerank=False để bỏ qua bước này khi cần.
-    use_rerank = True if rerank is None else bool(rerank)
-
-    candidate_limit = max(
-        top_k,
-        rerank_candidates or LEGAL_RERANK_CANDIDATES,
-    )
-
-    candidate_references = references[:candidate_limit]
-
-    if use_rerank and candidate_references:
-        try:
-            references = _semantic_rerank(
-                query=query,
-                references=candidate_references,
-                top_k=top_k,
-            )
-        except Exception as exc:
-            # Retrieval phải vẫn chạy được nếu model reranker chưa sẵn sàng.
-            # Không nuốt lỗi khi caller chủ động bật rerank.
-            if rerank is True:
-                raise
-
-            print(f"[Legal Reranker] fallback to generic ranking: {exc}")
-            references = references[:top_k]
-    else:
-        references = references[:top_k]
-
-    return LegalSearchResult(
-        references=references,
-        search_count=len(references),
-        query=query,
-        search_phrases=phrases,
-        entities=entities,
-        relationships=relationships,
-    )

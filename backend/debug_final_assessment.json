@@ -1,0 +1,183 @@
+{
+  "risk_level": "high",
+  "summary": "Phát hiện 3 rủi ro pháp lý được xác minh trực tiếp và 2 xung đột chéo giữa các điều khoản.",
+  "issues": [
+    {
+      "candidate_id": "CAND-001",
+      "risk_type": "Phạt vi phạm",
+      "description": "Phạt 25% giá trị phần hợp đồng bị vi phạm.",
+      "contract_chunk_ids": [
+        "chk_d3_1"
+      ],
+      "severity": "high",
+      "legal_references": [
+        {
+          "title": "Cách tính mức phạt vi phạm hợp đồng thương mại",
+          "url": "https://chinhsachonline.chinhphu.vn/cach-tinh-muc-phat-vi-pham-hop-dong-thuong-mai-71188.htm",
+          "snippet": "Trả lời Bộ Công Thương trả lời vấn đề này như sau: Luật Thương mại đề cao nguyên tắc tự do, tự thỏa thuận trong hoạt động thương mại, trong đó bao gồm việc t...",
+          "content": "Trả lời\n\nBộ Công Thương trả lời vấn đề này như sau:\n\nLuật Thương mại đề cao nguyên tắc tự do, tự thỏa thuận trong hoạt động thương mại, trong đó bao gồm việc thỏa thuận về mức phạt vi phạm và phần nghĩa vụ hợp đồng bị vi phạm. Mức 8% là mức phạt tối đa mà Nhà nước đặt ra để bảo đảm tối ưu quyền lợi hợp pháp của các bên.\n\nDo vậy, quyền thỏa thuận vẫn được trao cho các bên đối với mức phạt giá trị phần nghĩa vụ hợp đồng vi phạm nhưng không quá 8%.\n\nChia sẻ Zalo\n\nChia sẻ\n\nCu hỏi cùng lĩnh vực [...] Điều 301 Luật Thương mại quy định: \"Mức phạt đối với vi phạm nghĩa vụ hợp đồng hoặc tổng mức phạt đối với nhiều vi phạm do các bên thỏa thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa...",
+          "domain": "chinhsachonline.chinhphu.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": true
+        },
+        {
+          "title": "Nếu các bên trong hợp đồng thương mại không thỏa thuận về phạt vi phạm thì bên bị vi phạm có quyền yêu cầu phạt vi phạm không?",
+          "url": "https://thuvienphapluat.vn/phap-luat/neu-cac-ben-trong-hop-dong-thuong-mai-khong-thoa-thuan-ve-phat-vi-pham-thi-ben-bi-vi-pham-co-quyen--263981-148201.html",
+          "snippet": "## Mức phạt vi phạm hợp đồng thương mại tối đa là bao nhiêu theo quy định? Mức phạt vi phạm hợp đồng thương mại được quy định tại Điều 301 Luật Thương mại 20...",
+          "content": "## Mức phạt vi phạm hợp đồng thương mại tối đa là bao nhiêu theo quy định?\n\nMức phạt vi phạm hợp đồng thương mại được quy định tại Điều 301 Luật Thương mại 2005, cụ thể như sau:\n\n> Mức phạt vi phạm\n\n> Mức phạt đối với vi phạm nghĩa vụ hợp đồng hoặc tổng mức phạt đối với nhiều vi phạm do các bên thoả thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm, trừ trường hợp quy định tại Điều 266 của Luật này. [...] Theo đó, mức phạt đối với vi phạm nghĩa vụ hợp đồng hoặc tổng mức phạt đối với nhiều vi phạm do các bên thoả thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm, trừ phạt vi phạm, bồi thường thiệt hại trong trường hợp kết qu...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        },
+        {
+          "title": "Phạt vi phạm là gì? Mức phạt đối với vi phạm nghĩa vụ hợp đồng thương mại được xác định như thế nào?",
+          "url": "https://thuvienphapluat.vn/phap-luat/phat-vi-pham-la-gi-muc-phat-doi-voi-vi-pham-nghia-vu-hop-dong-thuong-mai-duoc-xac-dinh-nhu-the-nao-754678-119335.html",
+          "snippet": "Mức phạt đối với vi phạm nghĩa vụ hợp đồng thương mại được xác định tại Điều 301 Luật Thương mại 2005 như sau: > Mức phạt vi phạm > Mức phạt đối với vi phạm...",
+          "content": "Mức phạt đối với vi phạm nghĩa vụ hợp đồng thương mại được xác định tại Điều 301 Luật Thương mại 2005 như sau:\n\n> Mức phạt vi phạm\n\n> Mức phạt đối với vi phạm nghĩa vụ hợp đồng hoặc tổng mức phạt đối với nhiều vi phạm do các bên thoả thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm, trừ trường hợp quy định tại Điều 266 của Luật này. [...] Như vậy, mức phạt đối với vi phạm nghĩa vụ hợp đồng thương mại hoặc tổng mức phạt đối với nhiều vi phạm do các bên thoả thuận trong hợp đồng, nhưng không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm.\n\nTuy nhiên, mức phạt vi phạm trong trường hợp kết quả giám định sai sẽ được xác định theo quy định tại Điều 266 Luật T...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        }
+      ],
+      "evidence_type": "direct_contradictory",
+      "confidence": "high",
+      "analysis": "Đối chiếu giữa nội dung hợp đồng (Điều 3, Khoản 1) và các tài liệu pháp luật được cung cấp: Hợp đồng quy định 'Bên B chịu phạt vi phạm 25% giá trị phần hợp đồng bị vi phạm'. Trong khi đó, Legal Reference 1, 2 và 3 đều trích dẫn Điều 301 Luật Thương mại 2005 quy định: 'Mức phạt đối với vi phạm nghĩa vụ hợp đồng... không quá 8% giá trị phần nghĩa vụ hợp đồng bị vi phạm'. Mức 25% trong hợp đồng đã vượt quá giới hạn 8% mà pháp luật cho phép đối với các giao dịch thương mại.",
+      "conclusion": "Điều khoản phạt vi phạm 25% là trái với quy định tại Điều 301 Luật Thương mại 2005 về mức trần phạt vi phạm (không quá 8%).",
+      "redline": {
+        "action": "MODIFY",
+        "proposed_text": "1. Bên A thanh toán 100% giá trị hợp đồng ngay sau khi ký. Nếu Bên B giao trễ bất kỳ hạng mục nào quá 1 ngày, Bên B chịu phạt vi phạm 8% giá trị phần hợp đồng bị vi phạm và bồi thường toàn bộ thiệt hại phát sinh mà không có thỏa thuận giới hạn.",
+        "reason": "Giảm mức phạt từ 25% xuống tối đa 8% để tuân thủ quy định tại Điều 301 Luật Thương mại 2005."
+      }
+    },
+    {
+      "candidate_id": "CAND-005",
+      "risk_type": "Đơn phương chấm dứt hợp đồng",
+      "description": "Chấm dứt bất kỳ lúc nào không cần báo trước và không cần lý do.",
+      "contract_chunk_ids": [
+        "chk_d6_1"
+      ],
+      "severity": "high",
+      "legal_references": [
+        {
+          "title": "So sánh hủy bỏ hợp đồng và đơn phương chấm dứt hợp đồng",
+          "url": "https://thuvienphapluat.vn/phap-luat-doanh-nghiep/bai-viet/so-sanh-huy-bo-hop-dong-va-don-phuong-cham-dut-hop-dong-6113.html",
+          "snippet": "> Điều 428. Đơn phương chấm dứt thực hiện hợp đồng > > 1. Một bên có quyền đơn phương chấm dứt thực hiện hợp đồng và không phải bồi thường thiệt hại khi bên...",
+          "content": "> Điều 428. Đơn phương chấm dứt thực hiện hợp đồng\n> \n> 1. Một bên có quyền đơn phương chấm dứt thực hiện hợp đồng và không phải bồi thường thiệt hại khi bên kia vi phạm nghiêm trọng nghĩa vụ trong hợp đồng hoặc các bên có thỏa thuận hoặc pháp luật có quy định.\n> \n> 2. Bên đơn phương chấm dứt thực hiện hợp đồng phải thông báo ngay cho bên kia biết về việc chấm dứt hợp đồng, nếu không thông báo mà gây thiệt hại thì phải bồi thường.\n> [...] > \n> 3. Khi hợp đồng bị đơn phương chấm dứt thực hiện thì hợp đồng chấm dứt kể từ thời điểm bên kia nhận được thông báo chấm dứt. Các bên không phải tiếp tục thực hiện nghĩa vụ, trừ thỏa thuận về phạt vi phạm, bồi thường thiệt hại và thỏa thuận về giải q...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        },
+        {
+          "title": "Đơn phương chấm dứt hợp đồng được pháp luật quy định ra sao? Đơn phương chấm dứt hợp đồng trái pháp luật chịu hậu quả pháp lý gì?",
+          "url": "https://thuvienphapluat.vn/phap-luat/don-phuong-cham-dut-hop-dong-duoc-phap-luat-quy-dinh-ra-sao-don-phuong-cham-dut-hop-dong-trai-phap--267608-19976.html",
+          "snippet": "> 1. Có hành vi vi phạm hợp đồng; > 2. Có thiệt hại thực tế; > 3. Hành vi vi phạm hợp đồng là nguyên nhân trực tiếp gây ra thiệt hại. Như vậy, việc đơn phươn...",
+          "content": "> 1. Có hành vi vi phạm hợp đồng;\n\n> 2. Có thiệt hại thực tế;\n\n> 3. Hành vi vi phạm hợp đồng là nguyên nhân trực tiếp gây ra thiệt hại.\n\nNhư vậy, việc đơn phương chấm dứt hợp đồng chịu phạt vi phạm và bồi thường thiệt hại thực tế gây ra như thỏa thuận trong hợp đồng.\n\n## Đơn phương chấm dứt hợp đồng trong trường hợp nào không bị phạt vi phạm?\n\nTại Điều 294 Luật Thương mại 2005 quy định về các trường hợp miễn trách nhiệm đối với hành vi vi phạm như sau: [...] ## Đơn phương chấm dứt hợp đồng được pháp luật quy định ra sao?\n\nHợp đồng trên nguyên tắc là sự thỏa thuận vì vậy khi chấm dứt hợp đồng hai bên nên thỏa thuận giải quyết các vấn đề, nếu không thể tiếp tục thực hiện quyền và nghĩa vụ n...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        },
+        {
+          "title": "Sự kiện bất khả kháng quy định như thế nào trong hoạt động thương mại? Đơn phương chấm dứt hợp đồng khi có sự kiện bất khả kháng có vi phạm pháp luật không?",
+          "url": "https://thuvienphapluat.vn/phap-luat/su-kien-bat-kha-khang-quy-dinh-nhu-the-nao-trong-hoat-dong-thuong-mai-don-phuong-cham-dut-hop-dong--590807-19888.html",
+          "snippet": "Do đó, việc đơn phương chấm dứt hợp đồng do sự kiện bất khả kháng không vi phạm pháp luật nhưng bên đơn phương chấm dứt hợp đồng phải chứng minh được là mình...",
+          "content": "Do đó, việc đơn phương chấm dứt hợp đồng do sự kiện bất khả kháng không vi phạm pháp luật nhưng bên đơn phương chấm dứt hợp đồng phải chứng minh được là mình không thể khắc phục, giải quyết được sự cố và thông báo cho bên kia thực hiện việc chấm dứt hợp đồng.\n\n## Sự kiện bất khả kháng xảy ra có hành vi vi phạm nghĩa vụ thì có được miễn trách nhiệm không?\n\nTheo Điều 351 Bộ luật Dân sự 2015 quy định về trách nhiệm dân sự do vi phạm nghĩa vụ như sau: [...] Sự kiện bất khả kháng xảy ra có hành vi vi phạm nghĩa vụ thì có được miễn trách nhiệm không?\n\n## Đơn phương chấm dứt hợp đồng khi có sự kiện bất khả kháng có vi phạm pháp luật không?\n\nCăn cứ tại Điều 385 Bộ luật Dân sự 2015 quy định về khá...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        }
+      ],
+      "evidence_type": "direct_contradictory",
+      "confidence": "high",
+      "analysis": "Đối chiếu Điều 6 Khoản 1 của hợp đồng với Điều 428 Bộ luật Dân sự 2015: (1) Hợp đồng cho phép chấm dứt 'không cần báo trước', trong khi Khoản 2 Điều 428 bắt buộc bên đơn phương 'phải thông báo ngay cho bên kia biết về việc chấm dứt hợp đồng'. (2) Hợp đồng cho phép chấm dứt 'không cần lý do', trong khi Khoản 1 Điều 428 quy định quyền này chỉ phát sinh khi 'bên kia vi phạm nghiêm trọng nghĩa vụ' hoặc 'có thỏa thuận hoặc pháp luật có quy định'. Việc tự ý đưa ra quyền chấm dứt không căn cứ và không thông báo là vi phạm nghĩa vụ thông báo và có thể bị coi là đơn phương chấm dứt hợp đồng không có căn cứ theo Khoản 5 Điều 428, dẫn đến trách nhiệm bồi thường thiệt hại.",
+      "conclusion": "Điều khoản cho phép Bên A đơn phương chấm dứt hợp đồng bất kỳ lúc nào mà không cần báo trước và không cần lý do là trái với quy định về nghĩa vụ thông báo tại Khoản 2 Điều 428 Bộ luật Dân sự 2015.",
+      "redline": {
+        "action": "MODIFY",
+        "proposed_text": "1. Bên A có quyền đơn phương chấm dứt hợp đồng bằng cách thông báo bằng văn bản cho Bên B trước ít nhất [số ngày] ngày trong trường hợp Bên B vi phạm nghiêm trọng nghĩa vụ hợp đồng; khi đó Bên B phải hoàn trả toàn bộ tiền đã nhận trong 3 ngày.",
+        "reason": "Để tuân thủ nghĩa vụ thông báo theo Khoản 2 Điều 428 Bộ luật Dân sự 2015 và giới hạn quyền chấm dứt dựa trên vi phạm của bên kia nhằm tránh rủi ro chấm dứt hợp đồng không có căn cứ."
+      }
+    },
+    {
+      "candidate_id": "CAND-006",
+      "risk_type": "Không hoàn trả tiền",
+      "description": "Bên B phải hoàn trả toàn bộ tiền đã nhận trong 3 ngày khi chấm dứt.",
+      "contract_chunk_ids": [
+        "chk_d6_1"
+      ],
+      "severity": "high",
+      "legal_references": [
+        {
+          "title": "So sánh hủy bỏ hợp đồng và đơn phương chấm dứt hợp đồng",
+          "url": "https://thuvienphapluat.vn/phap-luat-doanh-nghiep/bai-viet/so-sanh-huy-bo-hop-dong-va-don-phuong-cham-dut-hop-dong-6113.html",
+          "snippet": "Việc hoàn trả được thực hiện bằng hiện vật. Trường hợp không hoàn trả được bằng hiện vật thì được trị giá thành tiền để hoàn trả. Trường hợp các bên cùng có...",
+          "content": "Việc hoàn trả được thực hiện bằng hiện vật. Trường hợp không hoàn trả được bằng hiện vật thì được trị giá thành tiền để hoàn trả.\n\nTrường hợp các bên cùng có nghĩa vụ hoàn trả thì việc hoàn trả phải được thực hiện cùng một thời điểm, trừ trường hợp có thỏa thuận khác hoặc pháp luật có quy định khác.\n\n### 2.2. Đơn phương chấm dứt hợp đồng\n\n Các trường hợp đơn phương chấm dứt hợp đồng:\n\n\\- Khi một bên vi phạm nghiêm trọng nghĩa vụ trong hợp đồng. [...] > \n> 3. Khi hợp đồng bị đơn phương chấm dứt thực hiện thì hợp đồng chấm dứt kể từ thời điểm bên kia nhận được thông báo chấm dứt. Các bên không phải tiếp tục thực hiện nghĩa vụ, trừ thỏa thuận về phạt vi phạm, bồi thường thiệt hại và thỏa thu...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        },
+        {
+          "title": "HỢP ĐỒNG ĐẠI LÝ",
+          "url": "https://thuvienphapluat.vn/hopdong/40835/HOP-DONG-DAI-LY",
+          "snippet": "14.5.Khi Hợp đồng này chấm dứt hiệu lực, Bên A có thể sẽ xem xét thanh lý số hàng tồn kho của Bên B bằng cách mua lại theo giá Bên A bán cho Bên Bhoặc giá th...",
+          "content": "14.5.Khi Hợp đồng này chấm dứt hiệu lực, Bên A có thể sẽ xem xét thanh lý số hàng tồn kho của Bên B bằng cách mua lại theo giá Bên A bán cho Bên Bhoặc giá thấp hơn hoặc chuyển sang Đại lý khác trong vòng 15 ngày kể từ ngày ký biên bản thanh lý hợp đồng.\n\n14.6.Trong trường hợp Bên B bán lại các sản phẩm tồn kho cho Bên A, các khoản khuyến mại và thưởng trên các sản phẩm này đã nhận trước đó sẽ được tính và hoàn trả lại cho Bên A. [...] 14.7.Trong mọi trường hợp dẫn đến Hợp đồng này bị chấm dứt, Bên A sẽ được miễn trừ trách nhiệm phải trả cho Bên B một khoản tiền với lý do là bồi thường, đền bù cho thời gian mà Bên B làm đại lý cho Bên A.\n\nĐIỀU 15. BẤT KHẢ KHÁNG",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        },
+        {
+          "title": "Khi nào hủy bỏ hợp đồng không phải bồi thường thiệt hại theo quy định pháp luật? Hợp đồng được pháp luật quy định như thế nào?",
+          "url": "https://thuvienphapluat.vn/phap-luat/khi-nao-huy-bo-hop-dong-khong-phai-boi-thuong-thiet-hai-theo-quy-dinh-phap-luat-hop-dong-duoc-phap--95893-7302.html",
+          "snippet": "> 1. Khi hợp đồng bị hủy bỏ thì hợp đồng không có hiệu lực từ thời điểm giao kết, các bên không phải thực hiện nghĩa vụ đã thỏa thuận, trừ thỏa thuận về phạt...",
+          "content": "> 1. Khi hợp đồng bị hủy bỏ thì hợp đồng không có hiệu lực từ thời điểm giao kết, các bên không phải thực hiện nghĩa vụ đã thỏa thuận, trừ thỏa thuận về phạt vi phạm, bồi thường thiệt hại và thỏa thuận về giải quyết tranh chấp.\n\n> 2. Các bên phải hoàn trả cho nhau những gì đã nhận sau khi trừ chi phí hợp lý trong thực hiện hợp đồng và chi phí bảo quản, phát triển tài sản. [...] > 3. Khi hợp đồng bị đơn phương chấm dứt thực hiện thì hợp đồng chấm dứt kể từ thời điểm bên kia nhận được thông báo chấm dứt. Các bên không phải tiếp tục thực hiện nghĩa vụ, trừ thỏa thuận về phạt vi phạm, bồi thường thiệt hại và thỏa thuận về giải quyết tranh chấp. Bên đã thực hiện nghĩa vụ có quyền yêu cầu bên k...",
+          "domain": "thuvienphapluat.vn",
+          "published_date": null,
+          "effective_date": null,
+          "is_official_source": false
+        }
+      ],
+      "evidence_type": "direct_contradictory",
+      "confidence": "high",
+      "analysis": "Đối chiếu giữa nội dung hợp đồng (chk_d6_1) và Legal Reference 1/3: Hợp đồng quy định khi Bên A đơn phương chấm dứt, Bên B phải 'hoàn trả toàn bộ tiền đã nhận'. Tuy nhiên, theo quy định pháp luật về đơn phương chấm dứt hợp đồng (Legal Reference 1, mục 2.2.3 và Legal Reference 3, mục 3), khi hợp đồng bị đơn phương chấm dứt, 'Bên đã thực hiện nghĩa vụ có quyền yêu cầu bên kia thanh toán phần nghĩa vụ đã thực hiện'. Ngoài ra, trong trường hợp hủy bỏ hoặc các nguyên tắc hoàn trả chung, các bên phải hoàn trả những gì đã nhận 'sau khi trừ chi phí hợp lý trong thực hiện hợp đồng'. Việc buộc hoàn trả 'toàn bộ' mà không cho phép khấu trừ phần nghĩa vụ đã thực hiện hoặc chi phí hợp lý là trái với quyền được thanh toán phần nghĩa vụ đã thực hiện của bên được chấm dứt hợp đồng.",
+      "conclusion": "Điều khoản buộc hoàn trả toàn bộ tiền đã nhận mà không tính đến phần nghĩa vụ đã thực hiện hoặc chi phí hợp lý là mâu thuẫn với quy định về hậu quả pháp lý của việc đơn phương chấm dứt hợp đồng.",
+      "redline": {
+        "action": "MODIFY",
+        "proposed_text": "1. Bên A có quyền đơn phương chấm dứt hợp đồng bất kỳ lúc nào không cần báo trước và không cần lý do; khi đó Bên B phải hoàn trả số tiền đã nhận sau khi đã trừ đi phần giá trị nghĩa vụ đã thực hiện và các chi phí hợp lý phát sinh trong quá trình thực hiện hợp đồng trong vòng 3 ngày.",
+        "reason": "Để đảm bảo quyền được thanh toán phần nghĩa vụ đã thực hiện và khấu trừ chi phí hợp lý của Bên B theo quy định pháp luật, tránh việc buộc hoàn trả toàn bộ gây bất lợi bất hợp lý."
+      }
+    }
+  ],
+  "cross_clause_conflicts": [
+    {
+      "conflict_id": "CONF-01",
+      "involved_clauses": [
+        "chk_d3_1",
+        "chk_d3_2"
+      ],
+      "description": "Mâu thuẫn về dòng tiền thanh toán: Điều 3 Khoản 1 quy định Bên A thanh toán 100% giá trị hợp đồng ngay sau khi ký, nhưng Điều 3 Khoản 2 lại quy định Bên A giữ lại 10% giá trị hợp đồng để làm tiền bảo hành và thanh toán đợt cuối sau khi nghiệm thu.",
+      "recommendation": "Đồng bộ lại tỷ lệ thanh toán tại Điều 3 Khoản 1 thành 'thanh toán 90% giá trị hợp đồng ngay sau khi ký' hoặc quy định rõ 100% bao gồm cả khoản giữ lại để tránh hiểu lầm về nghĩa vụ tài chính tức thời."
+    },
+    {
+      "conflict_id": "CONF-02",
+      "involved_clauses": [
+        "chk_d3_2",
+        "chk_d6_1"
+      ],
+      "description": "Mâu thuẫn về nghĩa vụ hoàn trả tiền khi chấm dứt hợp đồng: Điều 3 Khoản 2 quy định 10% giá trị hợp đồng được giữ lại làm tiền bảo hành (thường gắn với việc đã thực hiện xong công việc/nghiệm thu), trong khi Điều 6 Khoản 1 cho phép chấm dứt bất kỳ lúc nào và yêu cầu hoàn trả 'toàn bộ tiền đã nhận'. Nếu hợp đồng bị chấm dứt trước khi nghiệm thu, việc áp dụng cơ chế bảo hành 10% trở nên vô nghĩa và xung đột với nghĩa vụ hoàn trả toàn bộ.",
+      "recommendation": "Cần quy định rõ cơ chế hoàn trả tiền trong trường hợp chấm dứt hợp đồng sớm (trước nghiệm thu) khác với việc quyết toán sau khi đã nghiệm thu hoàn thành để tách biệt nghĩa vụ bảo hành và nghĩa vụ hoàn trả do chấm dứt hợp đồng."
+    }
+  ],
+  "recommendations": [
+    "[CAND-001 - MODIFY] 1. Bên A thanh toán 100% giá trị hợp đồng ngay sau khi ký. Nếu Bên B giao trễ bất kỳ hạng mục nào quá 1 ngày, Bên B chịu phạt vi phạm 8% giá trị phần hợp đồng bị vi phạm và bồi thường toàn bộ thiệt hại phát sinh mà không có thỏa thuận giới hạn.",
+    "[CAND-005 - MODIFY] 1. Bên A có quyền đơn phương chấm dứt hợp đồng bằng cách thông báo bằng văn bản cho Bên B trước ít nhất [số ngày] ngày trong trường hợp Bên B vi phạm nghiêm trọng nghĩa vụ hợp đồng; khi đó Bên B phải hoàn trả toàn bộ tiền đã nhận trong 3 ngày.",
+    "[CAND-006 - MODIFY] 1. Bên A có quyền đơn phương chấm dứt hợp đồng bất kỳ lúc nào không cần báo trước và không cần lý do; khi đó Bên B phải hoàn trả số tiền đã nhận sau khi đã trừ đi phần giá trị nghĩa vụ đã thực hiện và các chi phí hợp lý phát sinh trong quá trình thực hiện hợp đồng trong vòng 3 ngày.",
+    "[CONF-01 - chk_d3_1, chk_d3_2] Đồng bộ lại tỷ lệ thanh toán tại Điều 3 Khoản 1 thành 'thanh toán 90% giá trị hợp đồng ngay sau khi ký' hoặc quy định rõ 100% bao gồm cả khoản giữ lại để tránh hiểu lầm về nghĩa vụ tài chính tức thời.",
+    "[CONF-02 - chk_d3_2, chk_d6_1] Cần quy định rõ cơ chế hoàn trả tiền trong trường hợp chấm dứt hợp đồng sớm (trước nghiệm thu) khác với việc quyết toán sau khi đã nghiệm thu hoàn thành để tách biệt nghĩa vụ bảo hành và nghĩa vụ hoàn trả do chấm dứt hợp đồng."
+  ]
+}

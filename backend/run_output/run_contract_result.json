@@ -1,0 +1,427 @@
+{
+  "chunks": [
+    {
+      "id": "sample_chunk_001",
+      "text": "HỢP ĐỒNG CUNG CẤP DỊCH VỤ\n\nĐiều 1. Phạm vi dịch vụ\nBên A thuê Bên B cung cấp dịch vụ theo mô tả và tiến độ được hai bên xác nhận bằng văn bản.\n\nĐiều 2. Thanh toán\nBên A thanh toán toàn bộ giá trị hợp đồng trong vòng 05 ngày kể từ ngày ký, kể cả khi Bên B chưa cung cấp dịch vụ. Nếu Bên A chậm thanh toán, Bên A phải trả khoản phạt bằng 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.\n\nĐiều 3. Trách nhiệm và miễn trừ\nBên B không chịu bất kỳ trách nhiệm nào trong mọi trường hợp, kể cả khi thiệt hại phát sinh do lỗi cố ý của Bên B. Bên A từ bỏ toàn bộ quyền khiếu nại, khởi kiện hoặc yêu cầu bồi thường liên quan đến hợp đồng này.\n\nĐiều 4. Chấm dứt hợp đồng\nBên B có quyền đơn phương chấm dứt hợp đồng bất cứ lúc nào mà không cần thông báo trước và không phải hoàn trả khoản tiền Bên A đã thanh toán. Bên A chỉ được chấm dứt hợp đồng khi có sự đồng ý bằng văn bản của Bên B.\n\nĐiều 5. Giải quyết tranh chấp\nMọi tranh chấp phát sinh từ hợp đồng được giải quyết theo quy định pháp luật Việt Nam.",
+      "article": "Hợp đồng mẫu",
+      "clause": null,
+      "point": null,
+      "hierarchy_path": null,
+      "chunk_type": "contract",
+      "parent_chunk_id": null
+    }
+  ],
+  "contract_summary": "Hợp đồng có 1 đoạn nội dung và 1 điều được nhận diện.",
+  "batches": [
+    [
+      {
+        "id": "sample_chunk_001",
+        "text": "HỢP ĐỒNG CUNG CẤP DỊCH VỤ\n\nĐiều 1. Phạm vi dịch vụ\nBên A thuê Bên B cung cấp dịch vụ theo mô tả và tiến độ được hai bên xác nhận bằng văn bản.\n\nĐiều 2. Thanh toán\nBên A thanh toán toàn bộ giá trị hợp đồng trong vòng 05 ngày kể từ ngày ký, kể cả khi Bên B chưa cung cấp dịch vụ. Nếu Bên A chậm thanh toán, Bên A phải trả khoản phạt bằng 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.\n\nĐiều 3. Trách nhiệm và miễn trừ\nBên B không chịu bất kỳ trách nhiệm nào trong mọi trường hợp, kể cả khi thiệt hại phát sinh do lỗi cố ý của Bên B. Bên A từ bỏ toàn bộ quyền khiếu nại, khởi kiện hoặc yêu cầu bồi thường liên quan đến hợp đồng này.\n\nĐiều 4. Chấm dứt hợp đồng\nBên B có quyền đơn phương chấm dứt hợp đồng bất cứ lúc nào mà không cần thông báo trước và không phải hoàn trả khoản tiền Bên A đã thanh toán. Bên A chỉ được chấm dứt hợp đồng khi có sự đồng ý bằng văn bản của Bên B.\n\nĐiều 5. Giải quyết tranh chấp\nMọi tranh chấp phát sinh từ hợp đồng được giải quyết theo quy định pháp luật Việt Nam.",
+        "article": "Hợp đồng mẫu",
+        "clause": null,
+        "point": null,
+        "hierarchy_path": null,
+        "chunk_type": "contract",
+        "parent_chunk_id": null
+      }
+    ]
+  ],
+  "agent_1_results": [
+    {
+      "agent": "agent_1",
+      "batch_id": "batch_1",
+      "risks": [
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Rủi ro thanh toán",
+          "description": "Yêu cầu thanh toán toàn bộ giá trị hợp đồng ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ.",
+          "severity": "medium",
+          "reason": "Điều khoản này tạo ra sự mất cân bằng nghiêm trọng về nghĩa vụ tài chính, khiến Bên A chịu rủi ro mất vốn khi Bên B chưa thực hiện bất kỳ nghĩa vụ cung cấp dịch vụ nào."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Rủi ro phạt vi phạm",
+          "description": "Mức phạt chậm thanh toán là 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.",
+          "severity": "medium",
+          "reason": "Mức phạt quá cao so với thông lệ thương mại và có thể vượt quá giới hạn trần phạt vi phạm hợp đồng theo quy định của pháp luật thương mại (nếu áp dụng Luật Thương mại)."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Rủi ro miễn trừ trách nhiệm",
+          "description": "Bên B miễn trừ toàn bộ trách nhiệm ngay cả khi thiệt hại do lỗi cố ý của Bên B gây ra và Bên A từ bỏ quyền khiếu nại, khởi kiện.",
+          "severity": "high",
+          "reason": "Điều khoản miễn trừ trách nhiệm đối với lỗi cố ý và tước bỏ quyền khởi kiện của một bên là điều khoản có dấu hiệu vi phạm các nguyên tắc cơ bản về trách nhiệm dân sự và có thể bị tuyên vô hiệu."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Rủi ro chấm dứt hợp đồng",
+          "description": "Bên B có quyền đơn phương chấm dứt hợp đồng không cần thông báo và không hoàn trả tiền, trong khi Bên A bị hạn chế quyền chấm dứt.",
+          "severity": "high",
+          "reason": "Tạo ra sự bất bình đẳng cực đoan trong quyền chấm dứt hợp đồng, cho phép Bên B chiếm dụng vốn mà không thực hiện nghĩa vụ và tước bỏ quyền kiểm soát hợp đồng của Bên A."
+        }
+      ]
+    }
+  ],
+  "agent_2_results": [
+    {
+      "agent": "agent_2",
+      "batch_id": "batch_1",
+      "risks": [
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Thanh toán",
+          "description": "Yêu cầu thanh toán toàn bộ giá trị hợp đồng ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ.",
+          "severity": "medium",
+          "reason": "Điều khoản này đẩy toàn bộ rủi ro về việc thực hiện nghĩa vụ của Bên B sang Bên A, tạo ra sự mất cân bằng nghiêm trọng trong nghĩa vụ thanh toán đối ứng với việc cung cấp dịch vụ."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Phạt vi phạm",
+          "description": "Mức phạt chậm thanh toán là 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.",
+          "severity": "medium",
+          "reason": "Mức phạt quá cao có thể bị coi là không phù hợp với nguyên tắc về phạt vi phạm trong các giao dịch dân sự/thương mại và có thể bị tuyên vô hiệu nếu vượt quá mức trần quy định của pháp luật chuyên ngành (nếu áp dụng Luật Thương mại)."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Trách nhiệm và miễn trừ",
+          "description": "Miễn trừ toàn bộ trách nhiệm cho Bên B ngay cả khi thiệt hại do lỗi cố ý gây ra và buộc Bên A từ bỏ quyền khiếu nại, khởi kiện.",
+          "severity": "high",
+          "reason": "Điều khoản miễn trừ trách nhiệm đối với lỗi cố ý là vi phạm nguyên tắc cơ bản của pháp luật dân sự Việt Nam (trách nhiệm bồi thường thiệt hại do lỗi cố ý không được phép miễn trừ) và xâm phạm quyền khởi kiện của đương sự."
+        },
+        {
+          "chunk_id": "sample_chunk_001",
+          "risk_type": "Chấm dứt hợp đồng",
+          "description": "Bên B có quyền đơn phương chấm dứt hợp đồng không cần thông báo và không hoàn trả tiền; Bên A chỉ được chấm dứt khi có sự đồng ý của Bên B.",
+          "severity": "high",
+          "reason": "Điều khoản này tạo ra sự bất bình đẳng cực đoan trong quyền chấm dứt hợp đồng, tước bỏ quyền đơn phương chấm dứt hợp đồng của Bên A khi có vi phạm từ Bên B và vi phạm nguyên tắc về sự tự nguyện, bình đẳng trong giao kết hợp đồng."
+        }
+      ]
+    }
+  ],
+  "candidate_issues": [
+    {
+      "candidate_id": "candidate_0001",
+      "risk_type": "Rủi ro thanh toán",
+      "description": "Yêu cầu thanh toán toàn bộ giá trị hợp đồng ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "medium",
+      "reasons": [
+        "Điều khoản này tạo ra sự mất cân bằng nghiêm trọng về nghĩa vụ tài chính, khiến Bên A chịu rủi ro mất vốn khi Bên B chưa thực hiện bất kỳ nghĩa vụ cung cấp dịch vụ nào."
+      ],
+      "detected_by": [
+        "agent_1"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Rủi ro thanh toán' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0002",
+      "risk_type": "Rủi ro phạt vi phạm",
+      "description": "Mức phạt chậm thanh toán là 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "medium",
+      "reasons": [
+        "Mức phạt quá cao so với thông lệ thương mại và có thể vượt quá giới hạn trần phạt vi phạm hợp đồng theo quy định của pháp luật thương mại (nếu áp dụng Luật Thương mại)."
+      ],
+      "detected_by": [
+        "agent_1"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Rủi ro phạt vi phạm' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0003",
+      "risk_type": "Rủi ro miễn trừ trách nhiệm",
+      "description": "Bên B miễn trừ toàn bộ trách nhiệm ngay cả khi thiệt hại do lỗi cố ý của Bên B gây ra và Bên A từ bỏ quyền khiếu nại, khởi kiện.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "high",
+      "reasons": [
+        "Điều khoản miễn trừ trách nhiệm đối với lỗi cố ý và tước bỏ quyền khởi kiện của một bên là điều khoản có dấu hiệu vi phạm các nguyên tắc cơ bản về trách nhiệm dân sự và có thể bị tuyên vô hiệu."
+      ],
+      "detected_by": [
+        "agent_1"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Rủi ro miễn trừ trách nhiệm' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0004",
+      "risk_type": "Rủi ro chấm dứt hợp đồng",
+      "description": "Bên B có quyền đơn phương chấm dứt hợp đồng không cần thông báo và không hoàn trả tiền, trong khi Bên A bị hạn chế quyền chấm dứt.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "high",
+      "reasons": [
+        "Tạo ra sự bất bình đẳng cực đoan trong quyền chấm dứt hợp đồng, cho phép Bên B chiếm dụng vốn mà không thực hiện nghĩa vụ và tước bỏ quyền kiểm soát hợp đồng của Bên A."
+      ],
+      "detected_by": [
+        "agent_1"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Rủi ro chấm dứt hợp đồng' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0005",
+      "risk_type": "Thanh toán",
+      "description": "Yêu cầu thanh toán toàn bộ giá trị hợp đồng ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "medium",
+      "reasons": [
+        "Điều khoản này đẩy toàn bộ rủi ro về việc thực hiện nghĩa vụ của Bên B sang Bên A, tạo ra sự mất cân bằng nghiêm trọng trong nghĩa vụ thanh toán đối ứng với việc cung cấp dịch vụ."
+      ],
+      "detected_by": [
+        "agent_2"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Thanh toán' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0006",
+      "risk_type": "Phạt vi phạm",
+      "description": "Mức phạt chậm thanh toán là 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "medium",
+      "reasons": [
+        "Mức phạt quá cao có thể bị coi là không phù hợp với nguyên tắc về phạt vi phạm trong các giao dịch dân sự/thương mại và có thể bị tuyên vô hiệu nếu vượt quá mức trần quy định của pháp luật chuyên ngành (nếu áp dụng Luật Thương mại)."
+      ],
+      "detected_by": [
+        "agent_2"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Phạt vi phạm' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0007",
+      "risk_type": "Trách nhiệm và miễn trừ",
+      "description": "Miễn trừ toàn bộ trách nhiệm cho Bên B ngay cả khi thiệt hại do lỗi cố ý gây ra và buộc Bên A từ bỏ quyền khiếu nại, khởi kiện.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "high",
+      "reasons": [
+        "Điều khoản miễn trừ trách nhiệm đối với lỗi cố ý là vi phạm nguyên tắc cơ bản của pháp luật dân sự Việt Nam (trách nhiệm bồi thường thiệt hại do lỗi cố ý không được phép miễn trừ) và xâm phạm quyền khởi kiện của đương sự."
+      ],
+      "detected_by": [
+        "agent_2"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Trách nhiệm và miễn trừ' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    },
+    {
+      "candidate_id": "candidate_0008",
+      "risk_type": "Chấm dứt hợp đồng",
+      "description": "Bên B có quyền đơn phương chấm dứt hợp đồng không cần thông báo và không hoàn trả tiền; Bên A chỉ được chấm dứt khi có sự đồng ý của Bên B.",
+      "related_chunk_ids": [
+        "sample_chunk_001"
+      ],
+      "severity": "high",
+      "reasons": [
+        "Điều khoản này tạo ra sự bất bình đẳng cực đoan trong quyền chấm dứt hợp đồng, tước bỏ quyền đơn phương chấm dứt hợp đồng của Bên A khi có vi phạm từ Bên B và vi phạm nguyên tắc về sự tự nguyện, bình đẳng trong giao kết hợp đồng."
+      ],
+      "detected_by": [
+        "agent_2"
+      ],
+      "legal_question": "Quy định pháp luật hiện hành nào điều chỉnh vấn đề 'Chấm dứt hợp đồng' trong điều khoản này? Cần kiểm tra điều khoản có mâu thuẫn trực tiếp với quy định bắt buộc áp dụng hay không."
+    }
+  ],
+  "verified_issues": [],
+  "agent_trace": [
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có dấu hiệu vi phạm nguyên tắc về sự cân bằng trong hợp đồng dân sự/thương mại (thanh toán toàn bộ trước khi thực hiện dịch vụ). Cần tìm kiếm các quy định pháp luật về tính hợp pháp của các điều khoản thanh toán và các quy định về bảo vệ quyền lợi bên yếu thế hoặc các quy định cấm trong hợp đồng dịch vụ để xác định xem việc thanh toán trước toàn bộ có bị coi là vô hiệu hoặc vi phạm điều cấm hay không.",
+      "candidate_id": "candidate_0001",
+      "tool_query": "quy định pháp luật về điều khoản thanh toán trước toàn bộ giá trị hợp đồng dịch vụ và tính hợp pháp của việc thanh toán không phụ thuộc vào việc thực hiện nghĩa vụ",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "drop",
+      "reasoning": "Mặc dù điều khoản thanh toán trong hợp đồng có dấu hiệu gây bất lợi lớn cho Bên A, nhưng trong pháp luật dân sự và thương mại Việt Nam, nguyên tắc tự do thỏa thuận (freedom of contract) cho phép các bên tự quyết định phương thức thanh toán trừ khi điều khoản đó vi phạm điều cấm của luật hoặc đạo đức xã hội. Hiện tại, không có quy định pháp luật cụ thể nào cấm việc thanh toán trước toàn bộ giá trị hợp đồng trong các giao dịch dân sự/thương mại thông thường. Do đó, không có căn cứ pháp lý trực tiếp để kết luận điều khoản này là vi phạm pháp luật (direct_contradictory). Việc giữ lại rủi ro dựa trên sự 'mất cân bằng' mà không có quy định cấm cụ thể là không đủ cơ sở pháp lý.",
+      "candidate_id": "candidate_0001",
+      "tool_query": null,
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có dấu hiệu vi phạm về mức phạt vi phạm hợp đồng (30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán). Cần xác định xem mức phạt này có vượt quá trần quy định của Luật Thương mại Việt Nam hay không để đưa ra kết luận chính xác.",
+      "candidate_id": "candidate_0002",
+      "tool_query": "mức phạt vi phạm hợp đồng thương mại tối đa theo Luật Thương mại Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có dấu hiệu vi phạm về mức trần phạt vi phạm hợp đồng (30% tổng giá trị hợp đồng). Cần xác định giới hạn tối đa của mức phạt vi phạm trong Luật Thương mại Việt Nam để đối chiếu trực tiếp với nội dung hợp đồng.",
+      "candidate_id": "candidate_0002",
+      "tool_query": "mức phạt vi phạm hợp đồng tối đa theo Luật Thương mại Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có dấu hiệu vi phạm mức trần phạt vi phạm hợp đồng (30% tổng giá trị hợp đồng). Cần xác định giới hạn tối đa của mức phạt vi phạm theo Luật Thương mại Việt Nam để đối chiếu trực tiếp với nội dung hợp đồng nhằm đưa ra kết luận cuối cùng.",
+      "candidate_id": "candidate_0002",
+      "tool_query": "mức phạt vi phạm hợp đồng tối đa theo Luật Thương mại Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có điều khoản miễn trừ trách nhiệm đối với 'lỗi cố ý' và tước bỏ quyền khiếu nại, khởi kiện của bên bị thiệt hại. Đây là vấn đề pháp lý cụ thể liên quan đến tính hiệu lực của điều khoản miễn trừ trách nhiệm trong dân sự và thương mại theo Bộ luật Dân sự Việt Nam. Cần tìm kiếm các quy định cấm hoặc hạn chế việc thỏa thuận miễn trừ trách nhiệm đối với lỗi cố ý để xác định tính vi phạm.",
+      "candidate_id": "candidate_0003",
+      "tool_query": "quy định về miễn trừ trách nhiệm do lỗi cố ý trong hợp đồng dân sự thương mại Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có dấu hiệu vi phạm các nguyên tắc cơ bản của pháp luật dân sự (miễn trừ trách nhiệm đối với lỗi cố ý và tước bỏ quyền khởi kiện). Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự để xác định xem thỏa thuận này có bị coi là vô hiệu hay không.",
+      "candidate_id": "candidate_0003",
+      "tool_query": "quy định về miễn trừ trách nhiệm đối với lỗi cố ý và quyền khởi kiện trong Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có dấu hiệu vi phạm nghiêm trọng các nguyên tắc về trách nhiệm dân sự (miễn trừ trách nhiệm cho lỗi cố ý) và quyền tiếp cận công lý (từ bỏ quyền khởi kiện). Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự Việt Nam về điều kiện có hiệu lực của giao dịch dân sự và các trường hợp thỏa thuận vô hiệu để xác minh tính pháp lý của điều khoản này.",
+      "candidate_id": "candidate_0003",
+      "tool_query": "quy định về miễn trừ trách nhiệm do lỗi cố ý và quyền khởi kiện trong Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 cho thấy sự bất bình đẳng nghiêm trọng về quyền đơn phương chấm dứt hợp đồng (Bên B không cần thông báo, không hoàn trả tiền; Bên A phải có sự đồng ý của Bên B). Cần tra cứu các quy định của Bộ luật Dân sự và Luật Thương mại về quyền đơn phương chấm dứt hợp đồng, nghĩa vụ thông báo và các điều khoản không được phép thỏa thuận trái với nguyên tắc công bằng hoặc các quy định bắt buộc để xác định tính vi phạm.",
+      "candidate_id": "candidate_0004",
+      "tool_query": "quy định pháp luật về đơn phương chấm dứt hợp đồng dịch vụ và nghĩa vụ hoàn trả tiền khi chấm dứt hợp đồng",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 có dấu hiệu vi phạm các nguyên tắc về quyền đơn phương chấm dứt hợp đồng và nghĩa vụ thông báo trong pháp luật dân sự/thương mại. Cần xác định xem việc 'không cần thông báo' và 'không hoàn trả tiền' có vi phạm các quy định bắt buộc về quyền đơn phương chấm dứt hợp đồng hoặc các quy định về chống điều khoản bất lợi/vô hiệu trong Bộ luật Dân sự hay không.",
+      "candidate_id": "candidate_0004",
+      "tool_query": "quy định về đơn phương chấm dứt hợp đồng dịch vụ và nghĩa vụ thông báo theo Bộ luật Dân sự và Luật Thương mại",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 có dấu hiệu vi phạm các nguyên tắc về sự bình đẳng trong giao kết hợp đồng và quyền đơn phương chấm dứt hợp đồng (quyền không cần thông báo và không hoàn trả tiền). Cần tra cứu các quy định của Bộ luật Dân sự về điều khoản vô hiệu do vi phạm điều cấm hoặc các quy định về đơn phương chấm dứt hợp đồng để xác định tính pháp lý của điều khoản này.",
+      "candidate_id": "candidate_0004",
+      "tool_query": "quy định về đơn phương chấm dứt hợp đồng dân sự thương mại và điều khoản vô hiệu do vi phạm nguyên tắc bình đẳng",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có vấn đề cụ thể về điều khoản thanh toán (thanh toán toàn bộ ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ). Cần kiểm tra xem quy định này có vi phạm các nguyên tắc về sự cân bằng nghĩa vụ trong hợp đồng dân sự hoặc các quy định đặc thù về hợp đồng cung cấp dịch vụ theo Bộ luật Dân sự Việt Nam hay không.",
+      "candidate_id": "candidate_0005",
+      "tool_query": "quy định pháp luật về thanh toán trong hợp đồng cung cấp dịch vụ và nguyên tắc cân bằng nghĩa vụ giữa các bên",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có dấu hiệu vi phạm nguyên tắc về sự cân bằng nghĩa vụ và quyền lợi trong hợp đồng dân sự (thanh toán trước toàn bộ mà không có sự đối ứng về dịch vụ). Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự về tính hợp pháp của các điều khoản thanh toán và sự thỏa thuận về nghĩa vụ trong hợp đồng cung cấp dịch vụ để xác định xem đây là sự thỏa thuận tự nguyện hay là điều khoản vô hiệu.",
+      "candidate_id": "candidate_0005",
+      "tool_query": "quy định về nghĩa vụ thanh toán và sự cân bằng quyền lợi trong hợp đồng cung cấp dịch vụ Bộ luật Dân sự",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Vấn đề về việc thanh toán toàn bộ giá trị hợp đồng ngay sau khi ký mà không phụ thuộc vào việc thực hiện dịch vụ có thể liên quan đến nguyên tắc tự do thỏa thuận trong Bộ luật Dân sự, nhưng cũng cần kiểm tra xem có vi phạm các quy định về tính công bằng, sự cân bằng lợi ích hoặc các quy định đặc thù về hợp đồng dịch vụ/hợp đồng cung ứng hay không. Cần xác định xem các điều khoản này có rơi vào trường hợp bị coi là vô hiệu do vi phạm điều cấm hoặc đạo đức xã hội hay không.",
+      "candidate_id": "candidate_0005",
+      "tool_query": "quy định về tính hợp pháp của điều khoản thanh toán trước toàn bộ giá trị hợp đồng trong hợp đồng dịch vụ Bộ luật Dân sự",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Ứng viên rủi ro liên quan đến mức phạt vi phạm 30% tổng giá trị hợp đồng cho mỗi lần chậm thanh toán. Cần xác định xem mức phạt này có vượt quá trần quy định của Luật Thương mại hoặc Bộ luật Dân sự Việt Nam hay không để xác định tính hợp pháp của điều khoản.",
+      "candidate_id": "candidate_0006",
+      "tool_query": "mức phạt vi phạm hợp đồng tối đa theo Luật Thương mại và Bộ luật Dân sự",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có vấn đề cụ thể về mức phạt vi phạm (30% tổng giá trị hợp đồng). Cần xác định mức trần phạt vi phạm tối đa theo Luật Thương mại và Bộ luật Dân sự để đối chiếu xem điều khoản này có vi phạm quy định bắt buộc hay không.",
+      "candidate_id": "candidate_0006",
+      "tool_query": "mức phạt vi phạm hợp đồng tối đa theo Luật Thương mại và Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Ứng viên có vấn đề cụ thể về mức phạt vi phạm (30% tổng giá trị hợp đồng). Cần xác định mức trần phạt vi phạm tối đa theo Luật Thương mại và Bộ luật Dân sự để đối chiếu xem điều khoản này có vi phạm quy định bắt buộc hay không. Do chưa có tài liệu pháp luật được cung cấp trong ngữ cảnh, cần thực hiện tra cứu để có căn cứ đối chiếu.",
+      "candidate_id": "candidate_0006",
+      "tool_query": "mức phạt vi phạm hợp đồng tối đa theo Luật Thương mại và Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có dấu hiệu vi phạm nghiêm trọng các nguyên tắc về trách nhiệm dân sự khi cho phép miễn trừ trách nhiệm đối với 'lỗi cố ý'. Tôi cần tìm kiếm các quy định trong Bộ luật Dân sự Việt Nam hiện hành để xác định xem việc thỏa thuận miễn trừ trách nhiệm đối với lỗi cố ý và việc từ bỏ quyền khiếu nại, khởi kiện có bị coi là vô hiệu hay không.",
+      "candidate_id": "candidate_0007",
+      "tool_query": "quy định về miễn trừ trách nhiệm do lỗi cố ý trong Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có dấu hiệu vi phạm các nguyên tắc cơ bản của pháp luật dân sự (miễn trừ trách nhiệm do lỗi cố ý và từ bỏ quyền khởi kiện). Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự Việt Nam về hiệu lực của thỏa thuận miễn trừ trách nhiệm và quyền khiếu nại, khởi kiện để xác định tính vô hiệu của điều khoản này.",
+      "candidate_id": "candidate_0007",
+      "tool_query": "quy định về miễn trừ trách nhiệm do lỗi cố ý và quyền khởi kiện trong Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 3 có dấu hiệu vi phạm nghiêm trọng các nguyên tắc về trách nhiệm dân sự (miễn trừ lỗi cố ý) và quyền tố tụng (từ bỏ quyền khởi kiện). Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự Việt Nam để xác định tính vô hiệu của các thỏa thuận này.",
+      "candidate_id": "candidate_0007",
+      "tool_query": "quy định về miễn trừ trách nhiệm do lỗi cố ý và quyền khởi kiện trong Bộ luật Dân sự Việt Nam",
+      "references_found": 0
+    },
+    {
+      "step": 1,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 có dấu hiệu vi phạm các nguyên tắc về quyền đơn phương chấm dứt hợp đồng và sự bình đẳng giữa các bên trong giao dịch dân sự/thương mại. Cần tìm kiếm các quy định của Bộ luật Dân sự và Luật Thương mại về quyền đơn phương chấm dứt hợp đồng và các điều khoản không được phép thỏa thuận nhằm xác định tính hợp pháp của điều khoản này.",
+      "candidate_id": "candidate_0008",
+      "tool_query": "quy định về đơn phương chấm dứt hợp đồng dịch vụ và nguyên tắc bình đẳng trong hợp đồng dân sự thương mại",
+      "references_found": 0
+    },
+    {
+      "step": 2,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 có dấu hiệu vi phạm nghiêm trọng nguyên tắc tự do thỏa thuận và bình đẳng trong giao dịch dân sự/thương mại (quyền đơn phương chấm dứt hợp đồng không cần thông báo và không hoàn trả tiền của Bên B, đồng thời hạn chế quyền của Bên A). Cần xác định các quy định bắt buộc của Bộ luật Dân sự và Luật Thương mại về quyền đơn phương chấm dứt hợp đồng và các điều khoản bị coi là vô hiệu do vi phạm nguyên tắc cơ bản để có căn cứ kết luận.",
+      "candidate_id": "candidate_0008",
+      "tool_query": "quy định về đơn phương chấm dứt hợp đồng dịch vụ và nguyên tắc bình đẳng trong hợp đồng dân sự thương mại",
+      "references_found": 0
+    },
+    {
+      "step": 3,
+      "action": "search_legal",
+      "reasoning": "Nội dung hợp đồng tại Điều 4 có dấu hiệu vi phạm các nguyên tắc cơ bản về quyền tự do thỏa thuận, bình đẳng và quyền đơn phương chấm dứt hợp đồng trong giao dịch dân sự/thương mại. Cần tìm kiếm các quy định cụ thể trong Bộ luật Dân sự và Luật Thương mại về điều kiện đơn phương chấm dứt hợp đồng và các điều khoản bị coi là vô hiệu để xác minh tính hợp pháp của điều khoản này.",
+      "candidate_id": "candidate_0008",
+      "tool_query": "quy định về đơn phương chấm dứt hợp đồng dịch vụ và các điều khoản bị coi là vô hiệu do vi phạm nguyên tắc bình đẳng trong Bộ luật Dân sự và Luật Thương mại",
+      "references_found": 0
+    }
+  ],
+  "agent3_tool_calls": 22,
+  "final_assessment": {
+    "risk_level": "low",
+    "summary": "Hệ thống đã phát hiện một số vấn đề cần xem xét, nhưng chưa thu thập hoặc xác minh được đủ căn cứ để kết luận có mâu thuẫn trực tiếp với pháp luật. Các ứng viên chưa đủ bằng chứng không được đưa vào danh sách rủi ro pháp lý đã xác minh.",
+    "issues": [],
+    "recommendations": [
+      "Nếu hợp đồng có giá trị lớn hoặc ảnh hưởng đến quyền và nghĩa vụ quan trọng, nên nhờ chuyên gia pháp lý rà soát trước khi ký."
+    ]
+  }
+}

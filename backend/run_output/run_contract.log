@@ -1,0 +1,207 @@
+2026-11-18 23:18:29,682 | INFO | run_one_contract | Bắt đầu chạy workflow thật trên hợp đồng mẫu.
+2026-11-18 23:18:29,682 | INFO | run_one_contract | Thư mục dự án: D:\legal-ai-assistant\backend
+2026-11-18 23:18:29,682 | INFO | run_one_contract | Log chi tiết: D:\legal-ai-assistant\backend\run_output\run_contract.log
+2026-11-18 23:18:32,460 | INFO | run_one_contract | Đã tạo 1 contract chunk; bắt đầu gọi graph.invoke().
+2026-11-18 23:18:32,469 | ERROR | run_one_contract | Workflow thất bại.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 165, in main
+    result = graph.invoke({"chunks": [chunk]})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 3913, in invoke
+    for chunk in self.stream(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 2967, in stream
+    for _ in runner.tick(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 344, in tick
+    _panic_or_proceed(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 687, in _panic_or_proceed
+    raise exc
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_retry.py", line 617, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 684, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 426, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\nodes.py", line 87, in run_agent_1_node
+    results = run_agent_1(
+              ^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 281, in run_agent_1
+    return _run_detection_agent(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 221, in _run_detection_agent
+    raw = call_llm(system_prompt, prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 90, in call_llm
+    response = get_llm_client().chat.completions.create(
+               ^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 72, in get_llm_client
+    raise RuntimeError(
+RuntimeError: Chưa cấu hình LLM_API_KEY trong biến môi trường.
+During task with name 'run_agent_1' and id '20292394-4e75-3208-4a41-1ec894bd2031'
+2026-11-18 23:19:02,758 | INFO | run_one_contract | Bắt đầu chạy workflow thật trên hợp đồng mẫu.
+2026-11-18 23:19:02,758 | INFO | run_one_contract | Thư mục dự án: D:\legal-ai-assistant\backend
+2026-11-18 23:19:02,758 | INFO | run_one_contract | Log chi tiết: D:\legal-ai-assistant\backend\run_output\run_contract.log
+2026-11-18 23:19:04,985 | INFO | run_one_contract | Đã tạo 1 contract chunk; bắt đầu gọi graph.invoke().
+2026-11-18 23:19:04,989 | ERROR | run_one_contract | Workflow thất bại.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 165, in main
+    result = graph.invoke({"chunks": [chunk]})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 3913, in invoke
+    for chunk in self.stream(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 2967, in stream
+    for _ in runner.tick(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 344, in tick
+    _panic_or_proceed(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 687, in _panic_or_proceed
+    raise exc
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_retry.py", line 617, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 684, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 426, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\nodes.py", line 87, in run_agent_1_node
+    results = run_agent_1(
+              ^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 281, in run_agent_1
+    return _run_detection_agent(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 221, in _run_detection_agent
+    raw = call_llm(system_prompt, prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 90, in call_llm
+    response = get_llm_client().chat.completions.create(
+               ^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 72, in get_llm_client
+    raise RuntimeError(
+RuntimeError: Chưa cấu hình LLM_API_KEY trong biến môi trường.
+During task with name 'run_agent_1' and id '2d4f5b67-6926-5cf4-dd26-c0db79712c6f'
+2026-11-18 23:24:18,663 | INFO | run_one_contract | Bắt đầu chạy workflow thật trên hợp đồng mẫu.
+2026-11-18 23:24:18,679 | INFO | run_one_contract | Thư mục dự án: D:\legal-ai-assistant\backend
+2026-11-18 23:24:18,679 | INFO | run_one_contract | Log chi tiết: D:\legal-ai-assistant\backend\run_output\run_contract.log
+2026-11-18 23:24:22,976 | INFO | run_one_contract | Đã tạo 1 contract chunk; bắt đầu gọi graph.invoke().
+2026-11-18 23:24:25,089 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-11-18 23:24:25,090 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 404 Not Found"
+2026-11-18 23:24:25,092 | ERROR | run_one_contract | Workflow thất bại.
+Traceback (most recent call last):
+  File "D:\legal-ai-assistant\backend\test.py", line 165, in main
+    result = graph.invoke({"chunks": [chunk]})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 3913, in invoke
+    for chunk in self.stream(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\main.py", line 2967, in stream
+    for _ in runner.tick(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 344, in tick
+    _panic_or_proceed(
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_runner.py", line 687, in _panic_or_proceed
+    raise exc
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\TIN\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\pregel\_retry.py", line 617, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 684, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\langgraph\_internal\_runnable.py", line 426, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\nodes.py", line 110, in run_agent_2_node
+    results = run_agent_2(
+              ^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 291, in run_agent_2
+    return _run_detection_agent(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 219, in _run_detection_agent
+    raw = call_llm(system_prompt, prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\backend\modes\risk_assessment\agent.py", line 88, in call_llm
+    response = get_llm_client().chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\openai\_utils\_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1296, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\openai\_base_client.py", line 1382, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\legal-ai-assistant\venv\Lib\site-packages\openai\_base_client.py", line 1155, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.NotFoundError: Error code: 404 - {'code': 404, 'description': "The requested model 'gemma-3-27b-it' is not available. Please check the model name or choose another supported model.", 'subcode': 404000, 'message': 'Not found'}
+During task with name 'run_agent_2' and id 'f2f748e7-e42b-be6f-c1d3-3ac7082cb8b2'
+2026-11-18 23:38:20,206 | INFO | run_one_contract | Bắt đầu chạy workflow thật trên hợp đồng mẫu.
+2026-11-18 23:38:20,206 | INFO | run_one_contract | Thư mục dự án: D:\legal-ai-assistant\backend
+2026-11-18 23:38:20,206 | INFO | run_one_contract | Log chi tiết: D:\legal-ai-assistant\backend\run_output\run_contract.log
+2026-11-18 23:38:22,274 | INFO | run_one_contract | Đã tạo 1 contract chunk; bắt đầu gọi graph.invoke().
+2026-11-18 23:38:24,899 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:24,911 | INFO | modes.risk_assessment.nodes | Agent 1 hoàn thành: 1 batch kết quả.
+2026-11-18 23:38:25,090 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:25,091 | INFO | modes.risk_assessment.nodes | Agent 2 hoàn thành: 1 batch kết quả.
+2026-11-18 23:38:25,094 | INFO | modes.risk_assessment.nodes | Đã gộp được 8 ứng viên rủi ro.
+2026-11-18 23:38:26,936 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:29,664 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:31,003 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:32,537 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:33,704 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:33,704 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0002
+2026-11-18 23:38:35,426 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:37,040 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:38,687 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:38,687 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0003
+2026-11-18 23:38:40,432 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:42,035 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:43,643 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:43,644 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0004
+2026-11-18 23:38:45,259 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:47,162 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:48,947 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:48,954 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0005
+2026-11-18 23:38:50,194 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:51,442 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:52,839 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:52,840 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0006
+2026-11-18 23:38:54,121 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:55,604 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:56,945 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:56,945 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0007
+2026-11-18 23:38:58,238 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:38:59,881 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:39:01,462 | INFO | httpx2 | HTTP Request: POST https://mkp-api.fptcloud.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-11-18 23:39:01,476 | INFO | modes.risk_assessment.agent | Đã đạt giới hạn tìm kiếm cho candidate_0008
+2026-11-18 23:39:01,476 | INFO | modes.risk_assessment.nodes | Agent 3 xác minh: 0/8 ứng viên được giữ lại.

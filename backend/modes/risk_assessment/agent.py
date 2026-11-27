@@ -1,505 +1,447 @@
+from __future__ import annotations
+
 import json
+import logging
 import os
 import re
-from typing import Any
+from typing import Any, TypeVar
 
-from openai import OpenAI
+import httpx
+from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel
 
-from .legal_tools import legal_search, get_graph_schema_context
+from config.settings import settings
 from .prompts import (
     AGENT_1_SYSTEM_PROMPT,
     AGENT_2_SYSTEM_PROMPT,
+    AGENT_3_SPLIT_SYSTEM_PROMPT,
     AGENT_3_SYSTEM_PROMPT,
+    CROSS_CLAUSE_AUDITOR_SYSTEM_PROMPT,
+    REDLINE_GENERATOR_SYSTEM_PROMPT,
     build_agent3_prompt,
     build_batch_prompt,
 )
 from .schemas import (
     Agent3Decision,
-    AgentIssue,
-    BatchRiskResult,
+    AgentAnalysisResult,
     ContractChunk,
+    CrossClauseConflict,
     LegalReference,
-    LegalSearchRequest,
-    Risk,
-    VerifiedIssue,
+    MergedRiskCandidate,
+    RedlineSuggestion,
+    RiskCandidate,
+    RiskSubIssue,
 )
 
+logger = logging.getLogger(__name__)
 
-FPT_BASE_URL = os.getenv(
-    "LLM_BASE_URL",
-    "https://mkp-api.fptcloud.com/v1",
-)
+T = TypeVar("T", bound=BaseModel)
 
-FPT_API_KEY = os.getenv("LLM_API_KEY")
-
-FPT_MODEL = os.getenv(
-    "LLM_MODEL",
-    "gemma-3-27b-it",
-)
-
-MAX_AGENT3_TOOL_CALLS_PER_ISSUE = int(
-    os.getenv(
-        "MAX_AGENT3_TOOL_CALLS_PER_ISSUE",
-        "2",
-    )
-)
+MAX_LLM_CALLS_PER_RUN = 120
+MAX_AGENT3_SEARCH_CALLS = 2
+MAX_AGENT3_STEPS = 4
 
 
-_client = None
+class RiskAgentLimitExceeded(RuntimeError):
+    """Vượt quá giới hạn số lần gọi LLM cho phép trong một lượt đánh giá."""
 
 
-def get_llm_client():
-    global _client
+def _build_chat_completions_url(base_url: str) -> str:
+    cleaned = base_url.strip().rstrip("/")
+    if cleaned.endswith("/chat/completions"):
+        return cleaned
+    if cleaned.endswith("/v1"):
+        return f"{cleaned}/chat/completions"
+    return f"{cleaned}/v1/chat/completions"
 
-    if _client is None:
-        if not FPT_API_KEY:
-            raise RuntimeError(
-                "FPT_API_KEY chưa được cấu hình."
-            )
 
-        _client = OpenAI(
-            api_key=FPT_API_KEY,
-            base_url=FPT_BASE_URL,
+class RiskAgentClient:
+    def __init__(
+        self,
+        model_name: str | None = None,
+        temperature: float = 0.05,
+        max_calls: int = MAX_LLM_CALLS_PER_RUN,
+        timeout: float = 60.0,
+    ) -> None:
+        api_key = getattr(settings, "API_LLM", None) or os.getenv("LLM_API_KEY")
+        if not api_key or not str(api_key).strip():
+            raise RuntimeError("Thiếu LLM_API_KEY trong cấu hình.")
+
+        base_url = getattr(settings, "LLM_BASE_URL", None) or os.getenv("LLM_BASE_URL")
+        if not base_url or not str(base_url).strip():
+            raise RuntimeError("Thiếu LLM_BASE_URL trong cấu hình.")
+
+        resolved_model = (
+            model_name
+            or getattr(settings, "LLM_MODEL", None)
+            or os.getenv("LLM_MODEL")
         )
+        if not resolved_model or not str(resolved_model).strip():
+            raise RuntimeError("Thiếu LLM_MODEL trong cấu hình.")
 
-    return _client
+        self.api_key = str(api_key).strip()
+        self.endpoint_url = _build_chat_completions_url(str(base_url))
+        self.model_name = str(resolved_model).strip()
+        self.temperature = temperature
+        self.max_calls = max(1, max_calls)
+        self.call_count = 0
 
-
-def call_llm(
-    system_prompt: str,
-    user_prompt: str,
-) -> str:
-    response = get_llm_client().chat.completions.create(
-        model=FPT_MODEL,
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
+        self._http = httpx.Client(
+            timeout=httpx.Timeout(timeout, connect=15.0),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
             },
-            {
-                "role": "user",
-                "content": user_prompt,
-            },
-        ],
-    )
+        )
 
-    return response.choices[0].message.content or ""
+    def close(self) -> None:
+        self._http.close()
 
+    def __enter__(self) -> RiskAgentClient:
+        return self
 
-def parse_json(text: str) -> dict:
-    text = (text or "").strip()
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
 
-    text = re.sub(
-        r"^```(?:json)?\s*",
-        "",
-        text,
-        flags=re.IGNORECASE,
-    )
+    def remaining_calls(self) -> int:
+        return max(0, self.max_calls - self.call_count)
 
-    text = re.sub(
-        r"\s*```$",
-        "",
-        text,
-    )
-
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        start = text.find("{")
-        end = text.rfind("}")
-
-        if start == -1 or end == -1:
-            raise ValueError(
-                "LLM không trả về JSON hợp lệ."
+    def _check_budget(self) -> None:
+        if self.call_count >= self.max_calls:
+            raise RiskAgentLimitExceeded(
+                f"Đã chạm giới hạn {self.max_calls} lần gọi LLM trong lượt này."
             )
 
-        return json.loads(
-            text[start:end + 1]
-        )
+    @staticmethod
+    def _extract_json_payload(raw_text: str) -> Any:
+        cleaned = (raw_text or "").strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
+        cleaned = cleaned.strip()
 
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            obj_match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
+            if obj_match:
+                return json.loads(obj_match.group(0))
+            raise
 
-def run_agent_1(
-    batches: list[list[ContractChunk]],
-) -> list[BatchRiskResult]:
-    results = []
+    @staticmethod
+    def _extract_message_content(data: dict[str, Any]) -> str:
+        choices = data.get("choices") or []
+        if not choices:
+            raise ValueError("Phản hồi API không có choices.")
+        message = choices[0].get("message") or {}
+        content = message.get("content", "")
+        if isinstance(content, list):
+            parts = [
+                item.get("text", "")
+                for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            ]
+            return "\n".join(parts).strip()
+        return str(content or "").strip()
 
-    for index, batch in enumerate(batches, start=1):
-        prompt = build_batch_prompt(
-            "AGENT 1",
-            _format_batch(batch),
-        )
+    def _chat(self, system_prompt: str, user_prompt: str) -> str:
+        payload = {
+            "model": self.model_name,
+            "temperature": self.temperature,
+            "messages": [
+                {"role": "system", "content": SystemMessage(content=system_prompt).content},
+                {"role": "user", "content": HumanMessage(content=user_prompt).content},
+            ],
+        }
+        response = self._http.post(self.endpoint_url, json=payload)
+        response.raise_for_status()
+        return self._extract_message_content(response.json())
 
-        raw = call_llm(
-            AGENT_1_SYSTEM_PROMPT,
-            prompt,
-        )
+    def invoke_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        schema_cls: type[T],
+        fallback: T,
+    ) -> T:
+        self._check_budget()
+        self.call_count += 1
 
-        data = parse_json(raw)
-
-        risks = [
-            Risk.model_validate(item)
-            for item in data.get("risks", [])
-        ]
-
-        results.append(
-            BatchRiskResult(
-                agent="agent_1",
-                batch_id=f"batch_{index}",
-                risks=risks,
+        try:
+            content = self._chat(system_prompt=system_prompt, user_prompt=user_prompt)
+            payload = self._extract_json_payload(content)
+            return schema_cls.model_validate(payload)
+        except RiskAgentLimitExceeded:
+            raise
+        except Exception as exc:
+            logger.warning(
+                "[RiskAgentClient] Parse/invoke fallback for %s: %s",
+                schema_cls.__name__,
+                exc,
             )
-        )
-
-    return results
+            return fallback
 
 
-def run_agent_2(
-    batches: list[list[ContractChunk]],
-) -> list[BatchRiskResult]:
-    results = []
-
-    for index, batch in enumerate(batches, start=1):
-        prompt = build_batch_prompt(
-            "AGENT 2",
-            _format_batch(batch),
-        )
-
-        raw = call_llm(
-            AGENT_2_SYSTEM_PROMPT,
-            prompt,
-        )
-
-        data = parse_json(raw)
-
-        risks = [
-            Risk.model_validate(item)
-            for item in data.get("risks", [])
-        ]
-
-        results.append(
-            BatchRiskResult(
-                agent="agent_2",
-                batch_id=f"batch_{index}",
-                risks=risks,
-            )
-        )
-
-    return results
+class _BatchRisksPayload(BaseModel):
+    risks: list[RiskCandidate] = []
 
 
-def _format_batch(
+class _SplitSubissuesPayload(BaseModel):
+    subissues: list[RiskSubIssue] = []
+
+
+class _ConflictsPayload(BaseModel):
+    conflicts: list[CrossClauseConflict] = []
+
+
+def run_batch_detector(
+    client: RiskAgentClient,
+    agent_name: str,
+    batch_id: str,
     batch: list[ContractChunk],
-) -> str:
-    parts = []
-
-    for chunk in batch:
-        parts.append(
-            f"""
-CHUNK_ID: {chunk.id}
-HIERARCHY: {chunk.hierarchy_path or ""}
-ARTICLE: {chunk.article or ""}
-CLAUSE: {chunk.clause or ""}
-POINT: {chunk.point or ""}
-
-CONTENT:
-{chunk.text}
-""".strip()
-        )
-
-    return "\n\n".join(parts)
-
-
-def merge_agent_results(
-    agent_1_results: list[BatchRiskResult],
-    agent_2_results: list[BatchRiskResult],
-) -> list[AgentIssue]:
-    """
-    Merge duplicate/similar candidates without requiring both agents
-    to agree. Agent 3 is responsible for legal verification.
-    """
-
-    candidates = []
-
-    for result in agent_1_results + agent_2_results:
-        for risk in result.risks:
-            candidates.append(risk)
-
-    groups: dict[tuple[str, str], list[Risk]] = {}
-
-    for risk in candidates:
-        key = (
-            risk.chunk_id,
-            risk.risk_type.strip().lower(),
-        )
-        groups.setdefault(key, []).append(risk)
-
-    issues = []
-
-    for index, risks in enumerate(
-        groups.values(),
-        start=1,
-    ):
-        primary = max(
-            risks,
-            key=lambda item: {
-                "high": 3,
-                "medium": 2,
-                "low": 1,
-            }[item.severity],
-        )
-
-        reasons = " | ".join(
-            dict.fromkeys(
-                item.reason
-                for item in risks
-                if item.reason
-            )
-        )
-
-        issues.append(
-            AgentIssue(
-                issue_id=f"issue_{index:04d}",
-                risk_type=primary.risk_type,
-                description=primary.description,
-                related_chunk_ids=[primary.chunk_id],
-                severity=primary.severity,
-                legal_question=(
-                    f"Quy định pháp luật nào điều chỉnh "
-                    f"vấn đề '{primary.risk_type}' "
-                    f"trong điều khoản này và điều khoản hợp đồng "
-                    f"có mâu thuẫn trực tiếp với quy định đó không?"
-                ),
-            )
-        )
-
-    return issues
-
-def _build_graph_context_phrases(issue, contract_chunks) -> list[str]:
-    """Tạo các cụm ngắn để tìm Entity, tránh dùng cả đoạn dài làm phrase."""
-    phrases = []
-    seen = set()
-
-    def add(value: str):
-        value = re.sub(r"\s+", " ", str(value or "")).strip(" .,:;!?()[]{}\"'")
-        if 3 <= len(value) <= 80 and value.lower() not in seen:
-            seen.add(value.lower())
-            phrases.append(value)
-
-    add(issue.risk_type)
-    for segment in re.split(r"[\n.;,:!?()]+", issue.description or ""):
-        add(segment)
-
-    # Entity text thường là cụm danh từ ngắn; tạo n-gram 2-4 từ từ hợp đồng.
-    stop_words = {
-        "và", "hoặc", "của", "cho", "trong", "được", "theo", "là",
-        "các", "những", "một", "bên", "này", "đó", "khi", "nếu",
-        "phải", "thì", "sẽ", "đã", "có", "không", "tại", "với",
-    }
-    for chunk in contract_chunks:
-        words = re.findall(r"[\wÀ-ỹ]+", chunk.text.lower())
-        useful = [word for word in words if word not in stop_words]
-        for n in (2, 3, 4):
-            for index in range(max(0, len(useful) - n + 1)):
-                add(" ".join(useful[index:index + n]))
-                if len(phrases) >= 35:
-                    return phrases
-    return phrases[:35]
-
-
-def normalize_agent3_decision(
-    data: dict,
-    issue: AgentIssue | None = None,
-) -> dict:
-    """Chuẩn hóa output của LLM3 trước khi validate Pydantic."""
-
-    data = dict(data)
-
-    # Chuẩn hóa evidence_type
-    evidence_type = data.get("evidence_type")
-
-    if evidence_type is None or not str(evidence_type).strip():
-        data["evidence_type"] = "insufficient"
-
-    action = data.get("action")
-    search_request = data.get("search_request")
-
-    if action == "search_legal":
-        # Nếu LLM không tạo search_request hợp lệ,
-        # khởi tạo object tìm kiếm.
-        if not isinstance(search_request, dict):
-            search_request = {}
-
-        query = search_request.get("query")
-
-        # Bổ sung query từ câu hỏi pháp lý của candidate
-        # nếu LLM bỏ trống hoặc không cung cấp query.
-        if not isinstance(query, str) or not query.strip():
-            if issue is None:
-                raise ValueError(
-                    "Agent 3 yêu cầu search_legal "
-                    "nhưng thiếu search_request.query."
-                )
-
-            search_request["query"] = issue.legal_question
-
-        data["search_request"] = search_request
-
-    elif search_request == {}:
-        # Những action không cần tìm kiếm pháp luật
-        # không nên giữ một search_request rỗng.
-        data["search_request"] = None
-
-    return data
-
-
-def run_agent_3_issue(
-    issue: AgentIssue,
-    contract_chunks: list[ContractChunk],
-    trace: list[dict] | None = None,
-) -> VerifiedIssue | None:
-    relevant_chunks = [
-        chunk
-        for chunk in contract_chunks
-        if chunk.id in issue.related_chunk_ids
-    ]
-
-    references: list[LegalReference] = []
-    previous_reasoning = ""
-    tool_calls = 0
-
-    # Lấy schema thật và các entity/relationship liên quan đến candidate.
-    # Agent 3 dùng context này để chọn type; không tự đoán schema.
-    graph_context = get_graph_schema_context(
-        search_phrases=_build_graph_context_phrases(
-            issue,
-            relevant_chunks,
-        ),
+    batch_text: str,
+    global_terms_text: str = "",
+) -> AgentAnalysisResult:
+    valid_ids = {c.id for c in batch}
+    system_prompt = (
+        AGENT_1_SYSTEM_PROMPT if agent_name == "agent_1" else AGENT_2_SYSTEM_PROMPT
+    )
+    user_prompt = build_batch_prompt(
+        agent_name=agent_name,
+        batch_text=batch_text,
+        global_terms_text=global_terms_text,
     )
 
-    for step in range(
-        MAX_AGENT3_TOOL_CALLS_PER_ISSUE + 1
-    ):
-        prompt = build_agent3_prompt(
-            issue=issue,
-            contract_chunks=relevant_chunks,
-            legal_references=references,
-            previous_reasoning=previous_reasoning,
-            graph_schema_context=graph_context,
-        )
-
-        raw = call_llm(
-            AGENT_3_SYSTEM_PROMPT,
-            prompt,
-        )
-
-        decision_data = parse_json(raw)
-
-        decision = Agent3Decision.model_validate(
-        normalize_agent3_decision(
-        decision_data,
-        issue=issue,
-        )
+    parsed = client.invoke_json(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        schema_cls=_BatchRisksPayload,
+        fallback=_BatchRisksPayload(risks=[]),
     )
 
-        previous_reasoning = decision.reasoning
-
-        if trace is not None:
-            trace.append(
-                {
-                    "step": step + 1,
-                    "action": decision.action,
-                    "reasoning": decision.reasoning,
-                    "issue_id": issue.issue_id,
-                    "tool_query": (
-                        decision.search_request.query
-                        if decision.search_request
-                        else None
-                    ),
-                    "selected_relationship_types": (
-                        decision.search_request.relationship_types
-                        if decision.search_request
-                        else []
-                    ),
-                    "references_found": len(references),
-                    "graph_entity_types": graph_context.get("entity_types", []),
-                    "graph_relationship_types": graph_context.get("relationship_types", []),
-                    "graph_entities_found": len(graph_context.get("matched_entities", [])),
-                    "graph_relationships_found": len(graph_context.get("matched_relationships", [])),
-                }
-            )
-
-        if decision.action == "search_legal":
-            if not decision.search_request:
-                break
-
-            if tool_calls >= MAX_AGENT3_TOOL_CALLS_PER_ISSUE:
-                break
-
-            search_request = decision.search_request
-
-            tool_result = legal_search(
-                query=search_request.query,
-                search_phrases=search_request.search_phrases,
-                entity_types=search_request.entity_types,
-                relationship_types=search_request.relationship_types,
-                top_k=search_request.top_k,
-                relationship_top_k=10,
-            )
-
-            tool_calls += 1
-
-            references = list(tool_result.references)
+    filtered_risks: list[RiskCandidate] = []
+    for item in parsed.risks:
+        if item.chunk_id not in valid_ids:
             continue
-
-        if decision.action == "keep":
-            # Agent 3 chỉ được giữ một risk khi chính nó xác định
-            # rằng căn cứ pháp luật áp dụng trực tiếp và mâu thuẫn
-            # với điều khoản hợp đồng. Không suy luận "có references"
-            # => "vi phạm".
-            if decision.evidence_type != "direct_contradictory":
-                return None
-
-            if not references:
-                return None
-
-            confidence = decision.legal_confidence
-            if confidence not in {"low", "medium", "high"}:
-                confidence = "low"
-
-            return VerifiedIssue(
-                issue_id=issue.issue_id,
-                risk_type=issue.risk_type,
-                description=issue.description,
-                contract_chunk_ids=issue.related_chunk_ids,
-                severity=issue.severity,
-                legal_references=references,
-                evidence_type="direct_contradictory",
-                legal_confidence=confidence,
-                analysis=decision.analysis,
-                conclusion=decision.conclusion,
+        cleaned_subissues: list[RiskSubIssue] = []
+        for sub in item.subissues:
+            queries = [q.strip() for q in sub.search_queries if q and q.strip()][:3]
+            cleaned_subissues.append(
+                RiskSubIssue(
+                    risk_type=sub.risk_type.strip() or item.risk_type,
+                    description=sub.description.strip() or item.description,
+                    legal_question=sub.legal_question.strip() or item.reason,
+                    needs_web_search=bool(sub.needs_web_search) and bool(queries),
+                    search_queries=queries,
+                )
             )
-
-        # drop / final
-        return None
-
-    return None
-
-
-def run_agent_3(
-    issues: list[AgentIssue],
-    contract_chunks: list[ContractChunk],
-    trace: list[dict] | None = None,
-) -> list[VerifiedIssue]:
-    verified = []
-
-    for issue in issues:
-        result = run_agent_3_issue(
-            issue=issue,
-            contract_chunks=contract_chunks,
-            trace=trace,
+        filtered_risks.append(
+            RiskCandidate(
+                chunk_id=item.chunk_id,
+                risk_type=item.risk_type.strip(),
+                description=item.description.strip(),
+                severity=item.severity,
+                reason=item.reason.strip(),
+                subissues=cleaned_subissues,
+            )
         )
 
-        if result is not None:
-            verified.append(result)
+    return AgentAnalysisResult(
+        agent="agent_1" if agent_name == "agent_1" else "agent_2",
+        batch_id=batch_id,
+        risks=filtered_risks,
+    )
 
-    return verified
+
+def run_subissue_splitter(
+    client: RiskAgentClient,
+    candidate: MergedRiskCandidate,
+    related_chunks: list[ContractChunk],
+    global_terms_text: str = "",
+) -> list[RiskSubIssue]:
+    chunks_preview = "\n\n".join(
+        f"[{c.id}] ({c.article or ''} {c.clause or ''}): {c.text[:1500]}"
+        for c in related_chunks
+    )
+    prompt = f"""
+THUẬT NGỮ ĐỊNH NGHĨA:
+{global_terms_text or "Không có."}
+
+ỨNG VIÊN RỦI RO:
+- risk_type: {candidate.risk_type}
+- description: {candidate.description}
+- legal_question: {candidate.legal_question}
+- search_queries: {candidate.search_queries}
+
+ĐIỀU KHOẢN LIÊN QUAN:
+{chunks_preview}
+""".strip()
+
+    fallback_sub = RiskSubIssue(
+        risk_type=candidate.risk_type,
+        description=candidate.description,
+        legal_question=candidate.legal_question,
+        needs_web_search=candidate.needs_web_search and bool(candidate.search_queries),
+        search_queries=candidate.search_queries[:3],
+    )
+    parsed = client.invoke_json(
+        system_prompt=AGENT_3_SPLIT_SYSTEM_PROMPT,
+        user_prompt=prompt,
+        schema_cls=_SplitSubissuesPayload,
+        fallback=_SplitSubissuesPayload(subissues=[fallback_sub]),
+    )
+    if not parsed.subissues:
+        return [fallback_sub]
+
+    result: list[RiskSubIssue] = []
+    for sub in parsed.subissues[:4]:
+        queries = [q.strip() for q in sub.search_queries if q and q.strip()][:3]
+        result.append(
+            RiskSubIssue(
+                risk_type=sub.risk_type.strip() or candidate.risk_type,
+                description=sub.description.strip() or candidate.description,
+                legal_question=sub.legal_question.strip() or candidate.legal_question,
+                needs_web_search=bool(sub.needs_web_search) and bool(queries),
+                search_queries=queries,
+            )
+        )
+    return result or [fallback_sub]
+
+
+def run_agent3_step(
+    client: RiskAgentClient,
+    candidate: MergedRiskCandidate,
+    related_chunks: list[ContractChunk],
+    legal_references: list[LegalReference],
+    previous_reasoning: str = "",
+    global_terms_text: str = "",
+    can_search_more: bool = True,
+) -> Agent3Decision:
+    prompt = build_agent3_prompt(
+        issue=candidate,
+        contract_chunks=related_chunks,
+        legal_references=legal_references,
+        previous_reasoning=previous_reasoning,
+        global_terms_text=global_terms_text,
+    )
+    fallback = Agent3Decision(
+        action="final",
+        reasoning="Không đủ căn cứ để kết luận mâu thuẫn pháp luật trực tiếp.",
+        search_request=None,
+        evidence_type="insufficient",
+        confidence="low",
+        analysis="Chưa có đủ tài liệu pháp luật đối chiếu trực tiếp với điều khoản.",
+        conclusion="Cần rà soát thêm hoặc giữ nguyên để đàm phán thương mại.",
+    )
+    decision = client.invoke_json(
+        system_prompt=AGENT_3_SYSTEM_PROMPT,
+        user_prompt=prompt,
+        schema_cls=Agent3Decision,
+        fallback=fallback,
+    )
+
+    if decision.action == "search_legal" and (
+        not can_search_more or decision.search_request is None
+    ):
+        return Agent3Decision(
+            action="final",
+            reasoning="Đã đạt giới hạn lượt tra cứu cho candidate này hoặc thiếu search_request.",
+            search_request=None,
+            evidence_type=(
+                "insufficient"
+                if decision.evidence_type == "direct_contradictory"
+                else decision.evidence_type
+            ),
+            confidence=decision.confidence,
+            analysis=decision.analysis or decision.reasoning,
+            conclusion=decision.conclusion
+            or "Chưa đủ căn cứ pháp luật kết luận trái luật.",
+        )
+
+    return decision
+
+
+def run_cross_clause_auditor(
+    client: RiskAgentClient,
+    chunks: list[ContractChunk],
+    candidates: list[MergedRiskCandidate],
+    global_terms_text: str = "",
+) -> list[CrossClauseConflict]:
+    if len(chunks) < 2:
+        return []
+
+    compact_clauses = "\n".join(
+        f"- [{c.id}] {c.article or ''} {c.clause or ''} ({c.hierarchy_path or ''}): {c.text[:450]}"
+        for c in chunks[:40]
+    )
+    compact_issues = "\n".join(
+        f"- {item.candidate_id} ({','.join(item.related_chunk_ids)}): {item.risk_type} - {item.description[:180]}"
+        for item in candidates[:25]
+    )
+    prompt = f"""
+THUẬT NGỮ ĐỊNH NGHĨA:
+{global_terms_text or "Không có."}
+
+DANH SÁCH ĐIỀU KHOẢN:
+{compact_clauses}
+
+CÁC VẤN ĐỀ ĐÃ PHÁT HIỆN:
+{compact_issues or "Chưa có."}
+""".strip()
+
+    parsed = client.invoke_json(
+        system_prompt=CROSS_CLAUSE_AUDITOR_SYSTEM_PROMPT,
+        user_prompt=prompt,
+        schema_cls=_ConflictsPayload,
+        fallback=_ConflictsPayload(conflicts=[]),
+    )
+
+    normalized: list[CrossClauseConflict] = []
+    for idx, c in enumerate(parsed.conflicts[:10], start=1):
+        clauses = [cl.strip() for cl in c.involved_clauses if cl and cl.strip()]
+        if len(clauses) < 2:
+            continue
+        normalized.append(
+            CrossClauseConflict(
+                conflict_id=c.conflict_id.strip() or f"CONF-{idx:02d}",
+                involved_clauses=clauses,
+                description=c.description.strip(),
+                recommendation=c.recommendation.strip(),
+            )
+        )
+    return normalized
+
+
+def run_redline_generator(
+    client: RiskAgentClient,
+    risk_type: str,
+    description: str,
+    analysis: str,
+    conclusion: str,
+    related_chunks: list[ContractChunk],
+) -> RedlineSuggestion:
+    clause_text = "\n\n".join(
+        f"[{c.id}] {c.article or ''} {c.clause or ''}:\n{c.text[:1200]}"
+        for c in related_chunks
+    )
+    prompt = f"""
+LOẠI RỦI RO: {risk_type}
+MÔ TẢ: {description}
+PHÂN TÍCH: {analysis}
+KẾT LUẬN: {conclusion}
+
+ĐIỀU KHOẢN GỐC:
+{clause_text or "Không có."}
+""".strip()
+
+    fallback = RedlineSuggestion(
+        action="REVIEW",
+        proposed_text="",
+        reason="Cần rà soát lại ngôn ngữ điều khoản cho rõ ràng và cân bằng quyền/nghĩa vụ.",
+    )
+    return client.invoke_json(
+        system_prompt=REDLINE_GENERATOR_SYSTEM_PROMPT,
+        user_prompt=prompt,
+        schema_cls=RedlineSuggestion,
+        fallback=fallback,
+    )
